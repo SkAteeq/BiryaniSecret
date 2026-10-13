@@ -31,16 +31,42 @@ export default function App() {
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
+  // Light / Dark Theme State
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('biryani_bandi_theme');
+      if (stored) return stored === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      try {
+        localStorage.setItem('biryani_bandi_theme', 'dark');
+      } catch {}
+    } else {
+      document.documentElement.classList.remove('dark');
+      try {
+        localStorage.setItem('biryani_bandi_theme', 'light');
+      } catch {}
+    }
+  }, [isDarkMode]);
+
+  const handleToggleTheme = () => {
+    setIsDarkMode((prev) => !prev);
+  };
+
   // Initialize auth and check URL params for room invite links
   useEffect(() => {
     let isMounted = true;
 
     async function initApp() {
       try {
-        // Test Firestore connection on app boot
         await testFirestoreConnection();
-
-        // Ensure user has a valid Firebase session (anonymous or authenticated)
         const currentUser = await ensureAuthenticatedUser();
         if (isMounted) {
           setUser(currentUser);
@@ -56,7 +82,6 @@ export default function App() {
         }
       }
 
-      // Check URL query parameters for ?room=HYD-XXXX
       const params = new URLSearchParams(window.location.search);
       const urlRoom = params.get('room');
       if (urlRoom && isMounted) {
@@ -72,7 +97,6 @@ export default function App() {
       }
     });
 
-    // Offline / Online listeners with Hyderabad error messaging
     const handleOffline = () => {
       setCurrentError(createHyderabadError('NETWORK_ERROR', 'Browser went offline'));
     };
@@ -125,7 +149,6 @@ export default function App() {
         return;
       }
 
-      // Update URL query param cleanly without full page refresh
       const url = new URL(window.location.href);
       url.searchParams.set('room', sanitized);
       window.history.pushState({}, '', url.toString());
@@ -175,7 +198,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-amber-50/40 text-stone-900 font-sans selection:bg-amber-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#FFF8EB] dark:bg-[#18110D] text-[#30231E] dark:text-[#FFF8EB] font-sans selection:bg-[#7A241C] selection:text-[#FFF8EB] transition-colors duration-200">
       {/* Top Navigation */}
       <Navbar
         currentView={currentView}
@@ -191,6 +214,8 @@ export default function App() {
         user={user}
         onUserUpdated={handleUserUpdated}
         onOpenJoinModal={() => setIsJoinModalOpen(true)}
+        isDarkMode={isDarkMode}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Content Area */}
@@ -204,8 +229,10 @@ export default function App() {
 
         {isInitializing ? (
           <div className="text-center py-24 space-y-3">
-            <div className="w-10 h-10 mx-auto rounded-xl bg-amber-600 animate-pulse" />
-            <p className="font-serif font-bold text-stone-700">Biryani Bandi initializing...</p>
+            <div className="w-10 h-10 mx-auto rounded-xl bg-[#7A241C] animate-pulse" />
+            <p className="font-serif font-bold text-[#30231E] dark:text-[#FFF8EB]">
+              Biryani Bandi initializing...
+            </p>
           </div>
         ) : (
           <>
@@ -265,13 +292,23 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-amber-900/10 py-6 text-center text-xs text-stone-500 bg-white/40">
+      <footer className="border-t border-[#E8DAC8]/80 dark:border-[#42322B] py-6 text-center text-xs text-[#6B544B] dark:text-[#D1C0B4] bg-[#FFFFFF]/60 dark:bg-[#1E1410]/60">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
-            <strong className="text-stone-800">Biryani Bandi</strong> — Dedicated to Hyderabad food lovers.
+            <strong className="text-[#7A241C] dark:text-[#D99A35]">Biryani Bandi</strong> — Authentic Hyderabadi Dining Consensus.
           </div>
-          <div className="text-stone-400">
-            Charminar • RTC X Roads • Secunderabad • Khairtabad • Habsiguda • Manikonda
+          <div className="text-[#8C766B] flex items-center gap-1.5 flex-wrap justify-center">
+            <span>Charminar</span>
+            <span aria-hidden="true">·</span>
+            <span>RTC X Roads</span>
+            <span aria-hidden="true">·</span>
+            <span>Secunderabad</span>
+            <span aria-hidden="true">·</span>
+            <span>Khairtabad</span>
+            <span aria-hidden="true">·</span>
+            <span>Habsiguda</span>
+            <span aria-hidden="true">·</span>
+            <span>Manikonda</span>
           </div>
         </div>
       </footer>

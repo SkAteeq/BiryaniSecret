@@ -4,11 +4,8 @@ import {
   Check,
   Clock,
   ExternalLink,
-  Share2,
   Lock,
   Flame,
-  Award,
-  AlertCircle,
   Copy,
   CheckCheck
 } from 'lucide-react';
@@ -21,6 +18,7 @@ import {
   finalizeRoomVoting
 } from '../firebase/roomService';
 import { createHyderabadError } from '../utils/errors';
+import { CulinaryArtwork } from './CulinaryArtwork';
 
 interface VotingRoomViewProps {
   roomId: string;
@@ -42,7 +40,6 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
 
-  // Subscribe to real-time room and votes subcollection
   useEffect(() => {
     if (!roomId) return;
 
@@ -55,7 +52,6 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
         }
         setRoom(updatedRoom);
 
-        // If room is already closed, automatically navigate to results
         if (updatedRoom.status === 'closed') {
           onViewResults(updatedRoom);
         }
@@ -81,7 +77,6 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     };
   }, [roomId, onErrorPrompt, onViewResults]);
 
-  // Expiry countdown timer
   useEffect(() => {
     if (!room?.expiresAt) return;
 
@@ -100,13 +95,11 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     return () => clearInterval(interval);
   }, [room?.expiresAt]);
 
-  // Current user's vote
   const myVote = useMemo(() => {
     if (!user) return null;
     return votes.find((v) => v.userId === user.uid) || null;
   }, [votes, user]);
 
-  // Vote counts tally per candidate
   const voteTallies = useMemo(() => {
     const tallies: Record<string, number> = {};
     if (room?.candidateIds) {
@@ -123,7 +116,6 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   }, [room?.candidateIds, votes]);
 
   const totalVotesCount = votes.length;
-
   const isHost = user && room && user.uid === room.hostId;
 
   const handleCastVote = async (restaurantId: string) => {
@@ -137,7 +129,6 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
       return;
     }
 
-    // Check expiry
     if (new Date(room.expiresAt).getTime() < Date.now()) {
       onErrorPrompt(createHyderabadError('ROOM_EXPIRED'));
       return;
@@ -163,7 +154,6 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     setIsFinalizing(true);
     try {
       await finalizeRoomVoting(roomId);
-      // The room snapshot listener will trigger onViewResults automatically
     } catch (err: any) {
       onErrorPrompt(createHyderabadError('SERVER_ERROR', err.message));
       setIsFinalizing(false);
@@ -180,13 +170,13 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   if (!room) {
     return (
       <div className="text-center py-20 space-y-4">
-        <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 text-amber-700 flex items-center justify-center animate-spin">
+        <div className="w-12 h-12 mx-auto rounded-2xl bg-[#34241D] text-[#D99A35] flex items-center justify-center animate-spin">
           <Flame className="w-6 h-6" />
         </div>
-        <h3 className="font-serif font-bold text-lg text-stone-800">
+        <h3 className="font-serif font-bold text-lg text-[#30231E] dark:text-[#FFF8EB]">
           Connecting to Mehfil...
         </h3>
-        <p className="text-xs text-stone-500">Checking room status and live ballot</p>
+        <p className="text-xs text-[#8C766B]">Checking room status and live ballot</p>
       </div>
     );
   }
@@ -194,72 +184,67 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
       {/* Room Header Card */}
-      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">
+      <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-5 sm:p-7 border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
-                Voting Room Active
-              </span>
-              <span className="font-mono text-xs font-bold bg-stone-100 text-stone-700 px-2 py-0.5 rounded border border-stone-200">
-                {room.id}
-              </span>
+            {/* Unboxed Metadata without pills */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#D99A35]">
+              <span>ROOM ACTIVE</span>
+              <span aria-hidden="true">·</span>
+              <span className="font-mono text-[#30231E] dark:text-[#FFF8EB]">{room.id}</span>
+              <span aria-hidden="true">·</span>
+              <span>HOST: {room.hostName}</span>
             </div>
 
-            <h2 className="font-serif font-black text-2xl sm:text-3xl text-stone-900 mt-1">
+            <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] mt-1">
               {room.title}
             </h2>
-
-            <p className="text-xs text-stone-500 mt-0.5">
-              Created by <strong className="text-stone-800">{room.hostName}</strong>
-              {isHost && <span className="ml-1 text-amber-700 font-bold">(You are Host)</span>}
-            </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopyInvite}
-              className="px-3 py-1.5 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-800 font-bold text-xs flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-2 rounded-xl border border-[#D99A35]/50 bg-[#FFF8EB] dark:bg-[#1E1410] text-[#30231E] dark:text-[#FFF8EB] font-bold text-xs flex items-center gap-1.5 transition-colors"
             >
-              {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Copied Link' : 'Invite Gang'}</span>
+              {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-[#486447]" /> : <Copy className="w-3.5 h-3.5 text-[#D99A35]" />}
+              <span>{copiedLink ? 'Copied' : 'Invite Gang'}</span>
             </button>
 
             {isHost && (
               <button
                 onClick={handleFinalizeVoting}
                 disabled={isFinalizing}
-                className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+                className="px-4 py-2 rounded-xl bg-[#7A241C] hover:bg-[#912D24] disabled:opacity-50 text-[#FFF8EB] font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
               >
-                <Lock className="w-3.5 h-3.5" />
-                <span>{isFinalizing ? 'Closing...' : 'Close & Finalize Result'}</span>
+                <Lock className="w-3.5 h-3.5 text-[#D99A35]" />
+                <span>{isFinalizing ? 'Closing...' : 'Close & Finalize'}</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Live Status Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-stone-100 text-xs text-stone-600">
+        {/* Live Status Row */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#E8DAC8]/60 dark:border-[#42322B]/60 text-xs text-[#6B544B] dark:text-[#D1C0B4]">
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 font-semibold text-stone-800">
-              <Users className="w-3.5 h-3.5 text-amber-700" />
-              <span>{totalVotesCount} {totalVotesCount === 1 ? 'vote cast' : 'votes cast'}</span>
+            <span className="flex items-center gap-1.5 font-bold text-[#30231E] dark:text-[#FFF8EB]">
+              <Users className="w-4 h-4 text-[#7A241C]" />
+              <span className="tabular-nums">{totalVotesCount} {totalVotesCount === 1 ? 'vote cast' : 'votes cast'}</span>
             </span>
 
-            <span className="flex items-center gap-1 text-stone-500">
-              <Clock className="w-3.5 h-3.5 text-stone-400" />
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-[#8C766B]" />
               <span>{timeRemaining || 'Voting open'}</span>
             </span>
           </div>
 
-          <div className="text-[11px] text-stone-500">
+          <div className="text-[11px] font-semibold">
             {myVote ? (
-              <span className="text-emerald-700 font-bold">
-                ✓ You voted for {myVote.restaurantName} (tap any option to switch)
+              <span className="text-[#486447] dark:text-[#78A376]">
+                ✓ Voted for {myVote.restaurantName} (tap any option to switch)
               </span>
             ) : (
-              <span className="text-amber-800 font-semibold animate-pulse">
-                👇 Tap an option below to cast your vote
+              <span className="text-[#7A241C] dark:text-[#D99A35] animate-pulse">
+                👇 Tap a contender below to cast your vote
               </span>
             )}
           </div>
@@ -268,8 +253,8 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
 
       {/* Candidate Ballot Cards */}
       <div className="space-y-3">
-        <h3 className="font-serif font-bold text-lg text-stone-900 px-1">
-          Candidate Restaurants ({room.candidateIds.length})
+        <h3 className="font-serif font-bold text-lg text-[#30231E] dark:text-[#FFF8EB] px-1">
+          Contenders ({room.candidateIds.length})
         </h3>
 
         <div className="space-y-3">
@@ -285,56 +270,60 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
               <div
                 key={candidateId}
                 onClick={() => !isVoting && handleCastVote(candidateId)}
-                className={`relative overflow-hidden bg-white rounded-2xl border-2 transition-all p-4 cursor-pointer select-none shadow-sm hover:shadow-md ${
+                className={`relative overflow-hidden bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl border-2 transition-all p-4 cursor-pointer select-none shadow-sm hover:shadow-md ${
                   isMySelection
-                    ? 'border-amber-600 bg-amber-50/40 ring-2 ring-amber-500/20'
-                    : 'border-stone-200 hover:border-amber-400'
+                    ? 'border-[#7A241C] ring-2 ring-[#7A241C]/30 bg-[#FFF8EB]/50 dark:bg-[#1E120E]'
+                    : 'border-[#E8DAC8] dark:border-[#42322B] hover:border-[#D99A35]'
                 }`}
               >
-                {/* Live percentage background progress bar */}
+                {/* Live Saffron Gold Percentage Bar */}
                 <div
                   className={`absolute top-0 bottom-0 left-0 transition-all duration-500 pointer-events-none ${
-                    isMySelection ? 'bg-amber-100/60' : 'bg-stone-100/60'
+                    isMySelection ? 'bg-[#D99A35]/20 dark:bg-[#D99A35]/15' : 'bg-[#E8DAC8]/30 dark:bg-[#34241D]/30'
                   }`}
                   style={{ width: `${percentage}%` }}
                 />
 
-                <div className="relative z-10 flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-serif font-black text-lg text-stone-900 leading-snug">
-                        {restaurant.name}
-                      </h4>
-                      {isMySelection && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500 text-stone-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          <span>Your Active Vote</span>
-                        </span>
-                      )}
+                <div className="relative z-10 flex items-center justify-between gap-4">
+                  {/* Thumbnail & Info */}
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-[#1C120E] shadow-sm">
+                      <CulinaryArtwork
+                        type={restaurant.artworkType || 'default'}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
 
-                    <p className="text-xs text-stone-500 font-medium">
-                      {restaurant.branch} • {restaurant.locality}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-serif font-black text-lg text-[#30231E] dark:text-[#FFF8EB] leading-tight">
+                          {restaurant.name}
+                        </h4>
+                        {isMySelection && (
+                          <span className="text-[10px] font-black uppercase text-[#7A241C] dark:text-[#D99A35] flex items-center gap-0.5">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Your Vote</span>
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="mt-1 flex items-center gap-2 text-xs text-stone-700">
-                      <span className="font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded text-[11px]">
-                        {restaurant.speciality}
-                      </span>
-                    </div>
-
-                    {restaurant.curatorNotes && (
-                      <p className="text-[11px] text-stone-600 italic mt-1.5 line-clamp-2">
-                        "{restaurant.curatorNotes}"
+                      <p className="text-xs text-[#8C766B] font-medium mt-0.5">
+                        {restaurant.branch} · {restaurant.locality}
                       </p>
-                    )}
+
+                      <p className="text-xs font-semibold text-[#6B544B] dark:text-[#D1C0B4] mt-1 truncate">
+                        {restaurant.speciality}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Vote Count & Action */}
                   <div className="flex flex-col items-end shrink-0 pl-2">
-                    <div className="flex items-baseline gap-1 text-stone-900">
-                      <span className="font-serif font-black text-2xl">{voteCount}</span>
-                      <span className="text-xs text-stone-500 font-medium font-sans">
+                    <div className="flex items-baseline gap-1 text-[#30231E] dark:text-[#FFF8EB]">
+                      <span className="font-serif font-black text-2xl sm:text-3xl tabular-nums text-[#7A241C] dark:text-[#D99A35]">
+                        {voteCount}
+                      </span>
+                      <span className="text-xs text-[#8C766B] font-medium font-sans tabular-nums">
                         ({percentage}%)
                       </span>
                     </div>
@@ -344,7 +333,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="mt-2 inline-flex items-center gap-1 text-[11px] text-amber-800 hover:text-amber-900 hover:underline font-semibold"
+                      className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-[#7A241C] dark:text-[#D99A35] hover:underline font-semibold"
                     >
                       <span>Map</span>
                       <ExternalLink className="w-3 h-3" />
@@ -358,32 +347,32 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
       </div>
 
       {/* Live Participants Feed */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="font-serif font-bold text-base text-stone-900">
-            Live Mehfil Feed ({votes.length} Participants)
+      <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-5 sm:p-6 border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <h4 className="font-serif font-bold text-base text-[#30231E] dark:text-[#FFF8EB]">
+            Mehfil Attendance ({votes.length})
           </h4>
-          <span className="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
-            ● Real-Time Sync
+          <span className="text-[#486447] dark:text-[#78A376] font-bold">
+            Live Subcollection Sync
           </span>
         </div>
 
         {votes.length === 0 ? (
-          <p className="text-xs text-stone-500 italic py-3 text-center">
-            No votes submitted yet. Share the invite code to get your friends in!
+          <p className="text-xs text-[#8C766B] italic py-3 text-center">
+            No votes submitted yet. Share the invite code to start the feast decision!
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             {votes.map((v) => (
               <div
                 key={v.userId}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 border border-stone-200/60 text-xs"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[#FFF8EB]/50 dark:bg-[#1A120F] border border-[#E8DAC8]/60 dark:border-[#42322B]/60 text-xs"
               >
-                <span className="font-medium text-stone-900 truncate">
+                <span className="font-medium text-[#30231E] dark:text-[#FFF8EB] truncate">
                   {v.userName}
                   {user && v.userId === user.uid && ' (You)'}
                 </span>
-                <span className="text-amber-900 font-bold truncate max-w-[140px] pl-2 text-right">
+                <span className="text-[#7A241C] dark:text-[#D99A35] font-bold truncate max-w-[130px] pl-2 text-right">
                   {v.restaurantName}
                 </span>
               </div>
@@ -392,17 +381,17 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
         )}
       </div>
 
-      {/* Host Finalization Prompt Sticky Bar */}
+      {/* Host Finalization Prompt Bar */}
       {isHost && (
-        <div className="p-4 rounded-2xl bg-amber-950 text-amber-50 flex items-center justify-between gap-3 shadow-xl border border-amber-700">
+        <div className="p-4 rounded-2xl bg-[#30231E] text-[#FFF8EB] flex items-center justify-between gap-3 shadow-2xl border border-[#D99A35]/50">
           <div className="text-xs">
-            <span className="font-bold text-amber-300 block">Host Controls</span>
-            Ready to decide? Close voting to finalize the winner for everyone.
+            <span className="font-bold text-[#D99A35] block">Host Controls</span>
+            Ready to eat? Close voting to finalize the winning outlet for everyone.
           </div>
           <button
             onClick={handleFinalizeVoting}
             disabled={isFinalizing}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shrink-0 transition-colors shadow-sm"
+            className="px-4 py-2.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs shrink-0 transition-colors shadow-md"
           >
             {isFinalizing ? 'Closing...' : 'Close Voting'}
           </button>

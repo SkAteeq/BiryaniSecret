@@ -8,8 +8,7 @@ import {
   Compass,
   AlertTriangle,
   RotateCcw,
-  Sparkles,
-  Info
+  Sparkles
 } from 'lucide-react';
 import { Restaurant, HyderabadError } from '../types';
 import { HYDERABAD_RESTAURANTS, getAllLocalities } from '../data/restaurants';
@@ -20,6 +19,7 @@ import {
   Coordinates
 } from '../utils/geo';
 import { createHyderabadError } from '../utils/errors';
+import { CulinaryArtwork } from './CulinaryArtwork';
 
 interface DiscoverViewProps {
   shortlistedIds: string[];
@@ -36,7 +36,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocality, setSelectedLocality] = useState<string>('ALL');
-  const [radiusFilter, setRadiusFilter] = useState<number | null>(null); // null means all
+  const [radiusFilter, setRadiusFilter] = useState<number | null>(null);
   const [userCoords, setUserCoords] = useState<Coordinates | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
@@ -51,7 +51,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       const coords = await requestUserCoordinates();
       setUserCoords(coords);
       if (radiusFilter === null) {
-        setRadiusFilter(10); // default 10km when location is turned on
+        setRadiusFilter(10);
       }
     } catch (err: any) {
       setLocationDenied(true);
@@ -61,7 +61,6 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
     }
   };
 
-  // Filtered and sorted restaurants
   const filteredRestaurants = useMemo(() => {
     return HYDERABAD_RESTAURANTS.map((restaurant) => {
       let distanceKm: number | null = null;
@@ -79,7 +78,6 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       };
     })
       .filter((restaurant) => {
-        // Search query filter
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchName = restaurant.name.toLowerCase().includes(q);
@@ -92,19 +90,16 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
           }
         }
 
-        // Locality filter
         if (selectedLocality !== 'ALL') {
           if (!restaurant.locality.toLowerCase().includes(selectedLocality.toLowerCase())) {
             return false;
           }
         }
 
-        // Hidden gem filter
         if (showHiddenGemsOnly && !restaurant.isHiddenGem) {
           return false;
         }
 
-        // Radius filter
         if (radiusFilter !== null && userCoords) {
           if (restaurant.distanceKm === null || restaurant.distanceKm > radiusFilter) {
             return false;
@@ -114,7 +109,6 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
         return true;
       })
       .sort((a, b) => {
-        // If distance is available, sort nearest first
         if (a.distanceKm !== null && b.distanceKm !== null) {
           return a.distanceKm - b.distanceKm;
         }
@@ -126,9 +120,9 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
     <div className="space-y-6 pb-24">
       {/* Shortlist Floating Sticky Bar */}
       {shortlistedIds.length > 0 && (
-        <div className="sticky top-20 z-30 bg-amber-900 text-amber-50 p-3.5 sm:p-4 rounded-2xl shadow-xl border border-amber-600 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-7 h-7 rounded-full bg-amber-500 text-stone-950 font-bold text-xs flex items-center justify-center shrink-0">
+        <div className="sticky top-20 z-30 bg-[#30231E] text-[#FFF8EB] p-3.5 sm:p-4 rounded-2xl shadow-2xl border border-[#D99A35] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-7 h-7 rounded-full bg-[#D99A35] text-[#1E110E] font-black text-xs flex items-center justify-center shrink-0">
               {shortlistedIds.length}
             </span>
             <div className="text-xs sm:text-sm font-semibold truncate">
@@ -137,41 +131,41 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
           </div>
           <button
             onClick={onProceedToCreateRoom}
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-bold text-xs sm:text-sm transition-colors shrink-0 shadow-sm"
+            className="px-4 py-2 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs sm:text-sm transition-colors shrink-0 shadow-md"
           >
             Create Voting Room →
           </button>
         </div>
       )}
 
-      {/* Header and Controls */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200/90 shadow-sm space-y-4">
+      {/* Filter and Control Panel */}
+      <div className="bg-[#FFFFFF] dark:bg-[#251B17] p-5 sm:p-6 rounded-3xl border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-4">
         <div>
-          <h2 className="font-serif font-black text-2xl sm:text-3xl text-stone-900 tracking-tight">
+          <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] tracking-tight">
             Curated Hyderabad Outlets
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-stone-600">
-            Branch-verified coordinates with directions and live voting shortlist builder.
+          <p className="mt-1 text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4]">
+            Branch-verified coordinates, authentic food photography, and direct Google Maps directions.
           </p>
         </div>
 
-        {/* Search bar */}
+        {/* Search Bar */}
         <div className="relative">
-          <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#D99A35] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by restaurant name, mutton dum, branch, or locality..."
+            placeholder="Search by restaurant name, mutton dum, kunda, branch..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 bg-stone-50/60 focus:bg-white focus:outline-none focus:border-amber-600 text-stone-900 text-sm placeholder:text-stone-400 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/50 dark:bg-[#1A120F] focus:bg-white dark:focus:bg-[#201612] focus:outline-none focus:border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB] text-sm placeholder:text-[#8C766B] transition-colors"
           />
         </div>
 
-        {/* Locality pills */}
+        {/* Locality Filter Buttons (Functional segmented buttons) */}
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#6B544B] dark:text-[#D1C0B4]">
             Filter by Locality
-          </label>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {localities.map((loc) => (
               <button
@@ -179,8 +173,8 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                 onClick={() => setSelectedLocality(loc)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   selectedLocality === loc
-                    ? 'bg-amber-600 text-white shadow-sm'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                    ? 'bg-[#7A241C] text-[#FFF8EB] shadow-sm'
+                    : 'bg-[#FFF8EB] dark:bg-[#1E1410] hover:bg-[#F2E5D0] dark:hover:bg-[#2C1E18] text-[#30231E] dark:text-[#FFF8EB] border border-[#E8DAC8] dark:border-[#42322B]'
                 }`}
               >
                 {loc === 'ALL' ? 'All Hyderabad' : loc}
@@ -190,24 +184,24 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
         </div>
 
         {/* Distance Radius & Location */}
-        <div className="pt-2 border-t border-stone-100 space-y-2">
+        <div className="pt-2 border-t border-[#E8DAC8]/60 dark:border-[#42322B]/60 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
-              Straight-Line Distance Radius
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B544B] dark:text-[#D1C0B4]">
+              Approx. Straight-Line Distance Radius
             </span>
 
             {!userCoords ? (
               <button
                 onClick={handleRequestLocation}
                 disabled={isLocating}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF2EA] dark:bg-[#202B1F] text-[#486447] dark:text-[#78A376] border border-[#486447]/30 font-bold text-xs transition-colors"
               >
                 <Compass className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
                 <span>{isLocating ? 'Locating Hyderabad...' : 'Use My GPS Location'}</span>
               </button>
             ) : (
-              <span className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-xs text-[#486447] dark:text-[#78A376] font-semibold flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" />
                 <span>GPS Active (approx. straight-line distance)</span>
               </span>
             )}
@@ -221,10 +215,10 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                 onClick={() => setRadiusFilter(radiusFilter === r ? null : r)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                   !userCoords
-                    ? 'opacity-40 cursor-not-allowed bg-stone-100 text-stone-400'
+                    ? 'opacity-40 cursor-not-allowed bg-[#E8DAC8]/30 dark:bg-[#1E1410] text-[#8C766B]'
                     : radiusFilter === r
-                    ? 'bg-amber-800 text-amber-50'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                    ? 'bg-[#7A241C] text-[#FFF8EB]'
+                    : 'bg-[#FFF8EB] dark:bg-[#1E1410] text-[#30231E] dark:text-[#FFF8EB] border border-[#E8DAC8] dark:border-[#42322B]'
                 }`}
               >
                 Within {r} km
@@ -235,27 +229,27 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               onClick={() => setShowHiddenGemsOnly(!showHiddenGemsOnly)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
                 showHiddenGemsOnly
-                  ? 'bg-orange-700 text-white'
-                  : 'bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200'
+                  ? 'bg-[#D99A35] text-[#1E110E] font-bold'
+                  : 'bg-[#FFF8EB] dark:bg-[#1E1410] text-[#D99A35] border border-[#D99A35]/40'
               }`}
             >
-              <Sparkles className="w-3 h-3 text-orange-500" />
+              <Sparkles className="w-3 h-3 text-[#D99A35]" />
               <span>Hidden Gems Only</span>
             </button>
           </div>
 
           {locationDenied && (
-            <p className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+            <p className="text-xs text-[#7A241C] dark:text-[#D99A35] bg-[#F7EBEA] dark:bg-[#331815] p-2.5 rounded-xl border border-[#7A241C]/30">
               GPS permission was denied. You can still discover every outlet and filter by locality manually!
             </p>
           )}
         </div>
       </div>
 
-      {/* Restaurants Count & Active Filters Bar */}
-      <div className="flex items-center justify-between text-xs text-stone-600 px-1">
+      {/* Count & Reset Row */}
+      <div className="flex items-center justify-between text-xs text-[#6B544B] dark:text-[#D1C0B4] px-1">
         <span>
-          Showing <strong className="text-stone-900">{filteredRestaurants.length}</strong> outlets in Hyderabad
+          Showing <strong className="text-[#30231E] dark:text-[#FFF8EB]">{filteredRestaurants.length}</strong> outlets in Hyderabad
         </span>
         {(searchQuery || selectedLocality !== 'ALL' || radiusFilter !== null || showHiddenGemsOnly) && (
           <button
@@ -265,7 +259,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               setRadiusFilter(null);
               setShowHiddenGemsOnly(false);
             }}
-            className="text-amber-800 hover:underline flex items-center gap-1 font-semibold"
+            className="text-[#7A241C] dark:text-[#D99A35] hover:underline flex items-center gap-1 font-semibold"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Reset filters</span>
@@ -273,16 +267,16 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
         )}
       </div>
 
-      {/* Restaurant Cards List */}
+      {/* Restaurant Cards Grid with Visual Hero Images */}
       {filteredRestaurants.length === 0 ? (
-        <div className="text-center py-12 px-4 bg-white rounded-3xl border border-dashed border-stone-300 space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
+        <div className="text-center py-12 px-4 bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl border border-dashed border-[#E8DAC8] dark:border-[#42322B] space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF8EB] dark:bg-[#331815] text-[#7A241C] flex items-center justify-center">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <h3 className="font-serif font-bold text-xl text-stone-900">
+          <h3 className="font-serif font-bold text-xl text-[#30231E] dark:text-[#FFF8EB]">
             Biryani drought, bhai! Radius penchi choodu.
           </h3>
-          <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4] max-w-md mx-auto">
             No verified outlets match your current filter combination. Try clearing the search or widening the radius.
           </p>
           <button
@@ -292,50 +286,62 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               setRadiusFilter(null);
               setShowHiddenGemsOnly(false);
             }}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs"
+            className="px-4 py-2 rounded-xl bg-[#7A241C] text-[#FFF8EB] font-bold text-xs"
           >
             Show All Hyderabad Outlets
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredRestaurants.map((restaurant) => {
             const isShortlisted = shortlistedIds.includes(restaurant.id);
 
             return (
               <div
                 key={restaurant.id}
-                className={`bg-white rounded-2xl border transition-all overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-md ${
-                  isShortlisted ? 'border-amber-600 ring-2 ring-amber-500/20' : 'border-stone-200'
+                className={`bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl border transition-all overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-lg ${
+                  isShortlisted
+                    ? 'border-[#7A241C] ring-2 ring-[#7A241C]/30'
+                    : 'border-[#E8DAC8] dark:border-[#42322B]'
                 }`}
               >
-                {/* Header Gradient Banner */}
-                <div className={`p-4 bg-gradient-to-r ${restaurant.imageFallbackGradient} text-white`}>
-                  <div className="flex items-start justify-between gap-2">
+                {/* Visual Hero Culinary Image */}
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#1C120E]">
+                  <CulinaryArtwork
+                    type={restaurant.artworkType || 'default'}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    dishName={restaurant.name}
+                  />
+
+                  {/* Gradient Overlay for Legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1C120E] via-transparent to-transparent opacity-80" />
+
+                  {/* Card Header Overlay */}
+                  <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* Clean Unboxed Metadata without pills */}
+                      <div className="text-[11px] font-semibold text-[#D99A35] flex items-center gap-1.5 flex-wrap drop-shadow">
+                        <span>{restaurant.locality}</span>
                         {restaurant.isHiddenGem && (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black uppercase tracking-wider">
-                            Hidden Gem
-                          </span>
+                          <>
+                            <span aria-hidden="true" className="text-[#D99A35]/60">·</span>
+                            <span className="text-[#FFF8EB] font-bold">Hidden Gem</span>
+                          </>
                         )}
-                        <span className="px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-amber-200 text-[10px] font-bold">
-                          {restaurant.locality}
-                        </span>
                       </div>
-                      <h3 className="font-serif font-black text-xl text-white mt-1 leading-tight">
+
+                      <h3 className="font-serif font-black text-xl text-[#FFF8EB] leading-tight drop-shadow">
                         {restaurant.name}
                       </h3>
-                      <p className="text-xs text-amber-100/90 font-medium">{restaurant.branch}</p>
                     </div>
 
-                    {/* Shortlist check button */}
+                    {/* Shortlist Voting Button */}
                     <button
                       onClick={() => onToggleShortlist(restaurant.id)}
-                      className={`p-2 rounded-xl font-bold transition-all shrink-0 ${
+                      className={`p-2.5 rounded-2xl font-bold transition-all shrink-0 shadow-lg ${
                         isShortlisted
-                          ? 'bg-amber-400 text-stone-950 shadow-md scale-105'
-                          : 'bg-white/20 hover:bg-white/30 text-white'
+                          ? 'bg-[#7A241C] text-[#FFF8EB] scale-105 ring-2 ring-[#D99A35]'
+                          : 'bg-[#FFF8EB] text-[#30231E] hover:bg-[#D99A35] hover:text-[#1E110E]'
                       }`}
                       title={isShortlisted ? 'Remove from voting shortlist' : 'Add to voting shortlist'}
                     >
@@ -344,55 +350,63 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    {/* Speciality & Notes */}
-                    <div className="flex items-start gap-2 text-xs">
-                      <span className="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 shrink-0">
-                        Speciality:
-                      </span>
-                      <span className="text-stone-800 font-semibold">{restaurant.speciality}</span>
+                {/* Content Section */}
+                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2.5">
+                    {/* Speciality & Spice Profile */}
+                    <div className="text-xs">
+                      <div className="font-bold text-[#30231E] dark:text-[#FFF8EB]">
+                        {restaurant.speciality}
+                      </div>
+                      {restaurant.spiceProfile && (
+                        <div className="text-[11px] text-[#7A241C] dark:text-[#D99A35] font-semibold mt-0.5">
+                          Profile: {restaurant.spiceProfile}
+                        </div>
+                      )}
                     </div>
 
+                    {/* Curator Notes */}
                     {restaurant.curatorNotes && (
-                      <p className="text-xs text-stone-600 italic bg-stone-50 p-2 rounded-xl border border-stone-200/80">
+                      <p className="text-xs text-[#6B544B] dark:text-[#D1C0B4] italic bg-[#FFF8EB]/70 dark:bg-[#1E1410] p-2.5 rounded-xl border border-[#E8DAC8]/60 dark:border-[#42322B]/60 leading-relaxed">
                         "{restaurant.curatorNotes}"
                       </p>
                     )}
 
-                    {/* Address & verified details */}
-                    <p className="text-[11px] text-stone-500 leading-snug">
+                    {/* Address & Verified Info */}
+                    <p className="text-[11px] text-[#8C766B] dark:text-[#A39287] leading-snug">
                       {restaurant.address}
                     </p>
 
-                    {/* Price & Hours meta */}
-                    <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-stone-600 pt-1">
+                    {/* Price and Hours */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#6B544B] dark:text-[#D1C0B4] pt-1">
                       {restaurant.pricePerPersonMin && restaurant.pricePerPersonMax ? (
                         <span>
-                          Approx. <strong>₹{restaurant.pricePerPersonMin} – ₹{restaurant.pricePerPersonMax}</strong> / person
+                          Approx. <strong className="text-[#30231E] dark:text-[#FFF8EB] tabular-nums">₹{restaurant.pricePerPersonMin} – ₹{restaurant.pricePerPersonMax}</strong> / person
                         </span>
                       ) : (
-                        <span className="text-stone-400">Price unverified</span>
+                        <span className="text-[#8C766B]">Price unverified</span>
                       )}
 
                       {restaurant.openingHours && (
-                        <span>
-                          Hours: <strong className="text-stone-700">{restaurant.openingHours}</strong>
-                        </span>
+                        <>
+                          <span aria-hidden="true" className="text-[#D99A35]/60">·</span>
+                          <span>
+                            Hours: <strong className="text-[#30231E] dark:text-[#FFF8EB]">{restaurant.openingHours}</strong>
+                          </span>
+                        </>
                       )}
                     </div>
                   </div>
 
-                  {/* Footer Bar with Distance & Map link */}
-                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-                    <div className="text-[11px] font-semibold text-stone-600">
+                  {/* Card Bottom Strip with Distance & Directions Button */}
+                  <div className="pt-3 border-t border-[#E8DAC8]/60 dark:border-[#42322B]/60 flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold">
                       {restaurant.distanceKm !== null ? (
-                        <span className="text-emerald-800 font-bold">
+                        <span className="text-[#486447] dark:text-[#78A376] font-bold">
                           📍 {formatDistance(restaurant.distanceKm)}
                         </span>
                       ) : (
-                        <span className="text-stone-400">Straight-line distance uncalculated</span>
+                        <span className="text-[#8C766B]">Straight-line distance uncalculated</span>
                       )}
                     </div>
 
@@ -400,7 +414,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                       href={restaurant.googleMapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 hover:text-amber-900 hover:underline"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFF8EB] dark:bg-[#1E1410] border border-[#D99A35]/50 text-[#7A241C] dark:text-[#D99A35] font-bold text-xs hover:bg-[#7A241C] hover:text-[#FFF8EB] dark:hover:bg-[#7A241C] transition-colors"
                     >
                       <span>Directions</span>
                       <ExternalLink className="w-3 h-3" />

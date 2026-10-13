@@ -21,10 +21,12 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hotel+Shadab+Madina+Building+Hyderabad',
     isActive: true,
     isHiddenGem: false,
-    curatorNotes: 'Historic Old City benchmark. Legendary Mutton Dum Biryani, double masala on request, accompanied by piping hot mirchi ka salan.',
+    curatorNotes: 'Historic Old City benchmark. Legendary Mutton Dum Biryani with tender falling-off-the-bone meat, double masala on request, accompanied by piping hot mirchi ka salan.',
     speciality: 'Mutton Dum Biryani & Paya',
-    imageFallbackGradient: 'from-amber-700 via-orange-600 to-red-800',
-    tags: ['Old City', 'Mutton Specialist', 'Late Night', 'Legendary']
+    imageFallbackGradient: 'from-[#592015] via-[#7A241C] to-[#30231E]',
+    tags: ['Old City', 'Mutton Specialist', 'Late Night', 'Legendary'],
+    artworkType: 'shadab',
+    spiceProfile: 'Double Masala (Rich & Robust)'
   },
   {
     id: 'bawarchi-rtcxroads',
@@ -41,10 +43,12 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Bawarchi+Restaurant+RTC+Cross+Roads+Hyderabad',
     isActive: true,
     isHiddenGem: false,
-    curatorNotes: 'The genuine original at RTC X Roads with no official branches. Famous for robust spice profiles, flavorful masala chicken biryani and quick service.',
+    curatorNotes: 'The genuine original at RTC X Roads with no branches. Famous for robust spices, deeply flavorful chicken biryani and speedy service.',
     speciality: 'Special Chicken Biryani & Mutton Biryani',
-    imageFallbackGradient: 'from-orange-700 via-amber-600 to-red-700',
-    tags: ['Central', 'Authentic Original', 'Huge Portions', 'Popular']
+    imageFallbackGradient: 'from-[#7A241C] via-[#B34B19] to-[#30231E]',
+    tags: ['Central', 'Authentic Original', 'Huge Portions', 'Popular'],
+    artworkType: 'bawarchi',
+    spiceProfile: 'Fiery Masala Infusion'
   },
   {
     id: 'paradise-secunderabad',
@@ -61,10 +65,12 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Paradise+Food+Court+MG+Road+Secunderabad',
     isActive: true,
     isHiddenGem: false,
-    curatorNotes: 'Established in 1953. Milder aromatic saffron-laced rice profile, family-friendly heritage dining room.',
+    curatorNotes: 'Established in 1953. Milder aromatic saffron-laced rice profile, silver vark accents, and classic family heritage dining.',
     speciality: 'Royal Mutton Biryani',
-    imageFallbackGradient: 'from-yellow-700 via-amber-600 to-amber-900',
-    tags: ['Secunderabad', 'Heritage 1953', 'Family Dining', 'Saffron Rice']
+    imageFallbackGradient: 'from-[#8C5815] via-[#D99A35] to-[#30231E]',
+    tags: ['Secunderabad', 'Heritage 1953', 'Family Dining', 'Saffron Rice'],
+    artworkType: 'paradise',
+    spiceProfile: 'Royal Saffron Mild & Aromatic'
   },
   {
     id: 'rumaan-khilwat',
@@ -81,10 +87,12 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Rumaan+Restaurant+Khilwat+Hyderabad',
     isActive: true,
     isHiddenGem: true,
-    curatorNotes: 'Old City insider gem nestled near Chowmahalla. Highly pocket-friendly, fiery masala depth, famed for authentic talawa gosht paired with biryani.',
+    curatorNotes: 'Old City insider gem nestled near Chowmahalla. Highly pocket-friendly, fiery masala depth, famed for authentic talawa gosht paired with spicy dum rice.',
     speciality: 'Spicy Dum Biryani & Talawa Gosht',
-    imageFallbackGradient: 'from-red-800 via-rose-700 to-amber-800',
-    tags: ['Old City', 'Pocket Friendly', 'Hidden Gem', 'Spicy']
+    imageFallbackGradient: 'from-[#7A241C] via-[#521711] to-[#1E110E]',
+    tags: ['Old City', 'Pocket Friendly', 'Hidden Gem', 'Spicy'],
+    artworkType: 'rumaan',
+    spiceProfile: 'Old City Fiery & Piquant'
   },
   {
     id: 'handi-khairtabad',
@@ -101,10 +109,12 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hyderabadi+Biryani+Handi+Khairtabad+Hyderabad',
     isActive: true,
     isHiddenGem: true,
-    curatorNotes: 'Slow dum cooked in dough-sealed earthen handis. Infuses subtle smoky notes and keeps rice grains exceptionally moist and long.',
+    curatorNotes: 'Slow dum cooked in dough-sealed earthen handis. Infuses subtle smoky notes and keeps rice grains exceptionally moist and fragrant.',
     speciality: 'Clay Handi Sealed Dum Biryani',
-    imageFallbackGradient: 'from-amber-800 via-yellow-700 to-orange-900',
-    tags: ['Khairtabad', 'Clay Handi', 'Aromatic Dum', 'Hidden Gem']
+    imageFallbackGradient: 'from-[#8C442A] via-[#D99A35] to-[#30231E]',
+    tags: ['Khairtabad', 'Clay Handi', 'Aromatic Dum', 'Hidden Gem'],
+    artworkType: 'handi',
+    spiceProfile: 'Earthen Smoked Dum'
   },
   {
     id: 'pr-biryani-habsiguda',
@@ -123,8 +133,10 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     isHiddenGem: false,
     curatorNotes: 'East Hyderabad staple popular with university scholars and local families. Generous meat portions with punchy fried onion sweetness.',
     speciality: 'Chicken Dum Biryani & Chicken 65',
-    imageFallbackGradient: 'from-orange-800 via-amber-700 to-stone-900',
-    tags: ['East Hyderabad', 'Habsiguda', 'Value for Money', 'Quick Parcel']
+    imageFallbackGradient: 'from-[#7A241C] via-[#912D24] to-[#30231E]',
+    tags: ['East Hyderabad', 'Habsiguda', 'Value for Money', 'Quick Parcel'],
+    artworkType: 'default',
+    spiceProfile: 'Telangana Zesty & Punchy'
   },
   {
     id: 'naidu-gari-kunda-manikonda',
@@ -143,8 +155,10 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     isHiddenGem: true,
     curatorNotes: 'Andhra-Telangana fusion kunda (pot) style biryani. Cooked and served directly in heated pots with robust local green chillies and curry leaf accents.',
     speciality: 'Kunda (Claypot) Fry Piece & Dum Biryani',
-    imageFallbackGradient: 'from-amber-900 via-orange-800 to-yellow-800',
-    tags: ['Cyberabad', 'Manikonda', 'Kunda Claypot', 'Fusion Spice']
+    imageFallbackGradient: 'from-[#486447] via-[#8C442A] to-[#30231E]',
+    tags: ['Cyberabad', 'Manikonda', 'Kunda Claypot', 'Fusion Spice'],
+    artworkType: 'kunda',
+    spiceProfile: 'Andhra Green Chilli & Curry Leaf'
   },
   {
     id: 'cafe-bahar-hyderguda',
@@ -163,8 +177,10 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     isHiddenGem: false,
     curatorNotes: 'Iconic city hub known for Bahar Special Mutton Biryani topped with extra boiled eggs and succulent fried chicken bits.',
     speciality: 'Bahar Special Mutton Biryani',
-    imageFallbackGradient: 'from-orange-700 via-amber-800 to-stone-800',
-    tags: ['Central', 'Hyderguda', 'Classic Heritage', 'Extra Egg Topping']
+    imageFallbackGradient: 'from-[#7A241C] via-[#D99A35] to-[#30231E]',
+    tags: ['Central', 'Hyderguda', 'Classic Heritage', 'Extra Egg Topping'],
+    artworkType: 'bawarchi',
+    spiceProfile: 'Classic Nizami Richness'
   },
   {
     id: 'shah-ghouse-gachibowli',
@@ -183,8 +199,10 @@ export const HYDERABAD_RESTAURANTS: Restaurant[] = [
     isHiddenGem: false,
     curatorNotes: 'The tech corridor late-night sanctuary. Rich, aromatic ghee aroma and perfectly tender meat served into the early hours of morning.',
     speciality: 'Special Mutton Biryani & Tangdi Kabab',
-    imageFallbackGradient: 'from-red-900 via-amber-800 to-orange-700',
-    tags: ['Cyberabad', 'Gachibowli', 'Late Night', 'Tech Corridor Fav']
+    imageFallbackGradient: 'from-[#7A241C] via-[#30231E] to-[#140C0A]',
+    tags: ['Cyberabad', 'Gachibowli', 'Late Night', 'Tech Corridor Fav'],
+    artworkType: 'shadab',
+    spiceProfile: 'Pure Ghee Late-Night Dum'
   }
 ];
 

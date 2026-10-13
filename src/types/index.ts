@@ -17,6 +17,8 @@ export interface Restaurant {
   speciality: string;
   imageFallbackGradient: string;
   tags: string[];
+  artworkType?: string;
+  spiceProfile?: string;
 }
 
 export type RoomStatus = 'voting' | 'closed';

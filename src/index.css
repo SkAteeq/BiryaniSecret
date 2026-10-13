@@ -1,1 +1,60 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-chilli: #7A241C;
+    --color-chilli-hover: #912D24;
+    --color-saffron: #D99A35;
+    --color-saffron-light: #FAD782;
+    --color-cream: #FFF8EB;
+    --color-cream-card: #FFFFFF;
+    --color-cream-border: #E8DAC8;
+    --color-mint: #486447;
+    --color-mint-light: #EBF2EA;
+    --color-spice: #30231E;
+    --color-spice-muted: #6B544B;
+    --color-surface-soft: #F9EFE0;
+  }
+
+  .dark {
+    --color-chilli: #912D24;
+    --color-chilli-hover: #A8362B;
+    --color-saffron: #D99A35;
+    --color-saffron-light: #FAD782;
+    --color-cream: #18110E;
+    --color-cream-card: #251B17;
+    --color-cream-border: #42322B;
+    --color-mint: #5E805D;
+    --color-mint-light: #202B1F;
+    --color-spice: #FFF8EB;
+    --color-spice-muted: #D1C0B4;
+    --color-surface-soft: #2F221D;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-spice);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+/* Custom Scrollbar for foodie aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D99A35;
+  border-radius: 9999px;
+  opacity: 0.6;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7A241C;
+}

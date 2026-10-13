@@ -8,13 +8,13 @@ import {
   CheckCheck,
   Share2,
   ArrowRight,
-  Flame,
-  AlertCircle
+  Flame
 } from 'lucide-react';
-import { Restaurant, UserProfile, HyderabadError } from '../types';
-import { HYDERABAD_RESTAURANTS, getRestaurantById } from '../data/restaurants';
+import { UserProfile, HyderabadError } from '../types';
+import { HYDERABAD_RESTAURANTS } from '../data/restaurants';
 import { createRoom } from '../firebase/roomService';
 import { createHyderabadError } from '../utils/errors';
+import { CulinaryArtwork } from './CulinaryArtwork';
 
 interface CreateRoomViewProps {
   shortlistedIds: string[];
@@ -119,55 +119,54 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
     }
   };
 
-  // If room is already created, show confirmation & share modal
   if (createdRoomId) {
     const inviteUrl = getInviteUrl(createdRoomId);
 
     return (
       <div className="max-w-xl mx-auto py-6 space-y-6">
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-500/40 shadow-2xl text-center space-y-5">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shadow-inner">
-            <Flame className="w-8 h-8 text-amber-600" />
+        <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-6 sm:p-8 border border-[#D99A35] shadow-2xl text-center space-y-5">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#FFF8EB] dark:bg-[#34241D] text-[#7A241C] flex items-center justify-center shadow-inner border border-[#D99A35]/30">
+            <Flame className="w-8 h-8 text-[#D99A35]" />
           </div>
 
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            <div className="text-xs font-bold text-[#486447] dark:text-[#78A376] tracking-widest uppercase">
               Voting Room Live
-            </span>
-            <h2 className="font-serif font-black text-2xl sm:text-3xl text-stone-900 mt-2">
+            </div>
+            <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] mt-1">
               Mehfil is Ready!
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 mt-1">
+            <p className="text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4] mt-1">
               Share this room code with your friends so they can vote immediately.
             </p>
           </div>
 
-          {/* Room Code Card */}
-          <div className="bg-stone-50 border-2 border-dashed border-amber-300 rounded-2xl p-4 space-y-2">
-            <span className="text-xs text-stone-500 font-bold uppercase tracking-wider">
+          {/* Room Code Showcase */}
+          <div className="bg-[#FFF8EB] dark:bg-[#1A120F] border-2 border-dashed border-[#D99A35] rounded-2xl p-5 space-y-2">
+            <div className="text-xs text-[#8C766B] font-bold uppercase tracking-wider">
               Copyable Room Code
-            </span>
+            </div>
             <div className="flex items-center justify-center gap-3">
-              <span className="font-mono text-3xl font-black text-amber-950 tracking-widest">
+              <span className="font-mono text-3xl sm:text-4xl font-black text-[#7A241C] dark:text-[#D99A35] tracking-widest">
                 {createdRoomId}
               </span>
               <button
                 onClick={handleCopyCode}
-                className="p-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 transition-colors"
+                className="p-2.5 rounded-xl bg-[#D99A35] hover:bg-[#FAD782] text-[#1E110E] transition-colors"
                 title="Copy Code"
               >
-                {copiedCode ? <CheckCheck className="w-5 h-5 text-emerald-800" /> : <Copy className="w-5 h-5" />}
+                {copiedCode ? <CheckCheck className="w-5 h-5 text-[#486447]" /> : <Copy className="w-5 h-5" />}
               </button>
             </div>
           </div>
 
           {/* Share Links */}
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-stone-100 text-stone-700 text-xs truncate border border-stone-200">
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#FFF8EB] dark:bg-[#1A120F] text-[#30231E] dark:text-[#FFF8EB] text-xs truncate border border-[#E8DAC8] dark:border-[#42322B]">
               <span className="truncate flex-1 text-left font-mono">{inviteUrl}</span>
               <button
                 onClick={handleCopyLink}
-                className="px-3 py-1.5 rounded-lg bg-white text-stone-900 font-bold border border-stone-300 shrink-0 hover:bg-stone-50"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] dark:bg-[#251B17] text-[#30231E] dark:text-[#FFF8EB] font-bold border border-[#E8DAC8] dark:border-[#42322B] shrink-0 hover:bg-[#F2E5D0]"
               >
                 {copiedLink ? 'Copied!' : 'Copy Link'}
               </button>
@@ -176,18 +175,18 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={handleShare}
-                className="flex-1 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                className="flex-1 py-3.5 rounded-xl bg-[#3D2921] hover:bg-[#4E352B] text-[#FFF8EB] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors border border-[#D99A35]/30"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-4 h-4 text-[#D99A35]" />
                 <span>Share with Friends</span>
               </button>
 
               <button
                 onClick={() => onRoomCreated(createdRoomId)}
-                className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-md"
+                className="flex-1 py-3.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-lg"
               >
                 <span>Enter Room Now</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-[#D99A35]" />
               </button>
             </div>
           </div>
@@ -198,12 +197,12 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20">
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-sm space-y-6">
+      <div className="bg-[#FFFFFF] dark:bg-[#251B17] p-6 sm:p-8 rounded-3xl border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-6">
         <div>
-          <h2 className="font-serif font-black text-2xl sm:text-3xl text-stone-900">
+          <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB]">
             Create a Biryani Room
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-stone-600">
+          <p className="mt-1 text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4]">
             Pick 2 to 10 contender restaurants and give your friends a vote.
           </p>
         </div>
@@ -211,7 +210,7 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
         <form onSubmit={handleCreateRoom} className="space-y-6">
           {/* Room Title */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
               Room Title / Occasion
             </label>
             <input
@@ -221,14 +220,14 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
               placeholder="e.g. Friday Lunch Biryani Raid"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:border-amber-600 text-stone-900 text-sm font-medium"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/50 dark:bg-[#1A120F] focus:bg-white dark:focus:bg-[#201612] focus:outline-none focus:border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB] text-sm font-medium"
             />
           </div>
 
-          {/* Host Name & Voting Duration */}
+          {/* Host Name & Duration */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
                 Your Host Nickname
               </label>
               <input
@@ -238,36 +237,36 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
                 placeholder="e.g. Bhaijaan Ahmed"
                 value={hostName}
                 onChange={(e) => setHostName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:border-amber-600 text-stone-900 text-sm font-medium"
+                className="w-full px-4 py-3 rounded-xl border border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/50 dark:bg-[#1A120F] focus:bg-white dark:focus:bg-[#201612] focus:outline-none focus:border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB] text-sm font-medium"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
                 Voting Window
               </label>
               <select
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:border-amber-600 text-stone-900 text-sm font-medium"
+                className="w-full px-4 py-3 rounded-xl border border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/50 dark:bg-[#1A120F] focus:bg-white dark:focus:bg-[#201612] focus:outline-none focus:border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB] text-sm font-medium"
               >
-                <option value={30}>30 minutes (Quick lunch)</option>
+                <option value={30}>30 minutes (Quick lunch decision)</option>
                 <option value={60}>1 hour (Standard plan)</option>
                 <option value={180}>3 hours (Evening dinner)</option>
-                <option value={1440}>24 hours (Weekend planning)</option>
+                <option value={1440}>24 hours (Weekend raid)</option>
               </select>
             </div>
           </div>
 
           {/* Candidate Selection Section */}
-          <div className="space-y-3 pt-2 border-t border-stone-100">
+          <div className="space-y-3 pt-2 border-t border-[#E8DAC8]/60 dark:border-[#42322B]/60">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
                   Select Candidates ({shortlistedIds.length}/10 selected)
-                </label>
-                <p className="text-[11px] text-stone-500">
-                  Minimum 2 required for a vote.
+                </div>
+                <p className="text-[11px] text-[#8C766B] dark:text-[#A39287]">
+                  Minimum 2 contenders required for a group vote.
                 </p>
               </div>
 
@@ -275,7 +274,7 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
                 <button
                   type="button"
                   onClick={onClearShortlist}
-                  className="text-xs text-rose-700 hover:underline flex items-center gap-1 font-semibold"
+                  className="text-xs text-[#7A241C] hover:underline flex items-center gap-1 font-semibold"
                 >
                   <Trash2 className="w-3 h-3" />
                   <span>Clear All</span>
@@ -283,8 +282,8 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
               )}
             </div>
 
-            {/* Quick Pick Pill Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-96 overflow-y-auto pr-1">
+            {/* Quick Pick Contender Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
               {HYDERABAD_RESTAURANTS.map((restaurant) => {
                 const isSelected = shortlistedIds.includes(restaurant.id);
 
@@ -293,27 +292,33 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
                     type="button"
                     key={restaurant.id}
                     onClick={() => onToggleShortlist(restaurant.id)}
-                    className={`p-3 rounded-xl border text-left transition-all flex items-start justify-between gap-2 ${
+                    className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 ${
                       isSelected
-                        ? 'border-amber-600 bg-amber-50/80 ring-1 ring-amber-600 text-stone-900'
-                        : 'border-stone-200 bg-stone-50/50 hover:bg-stone-100 text-stone-700'
+                        ? 'border-[#7A241C] bg-[#FFF8EB] dark:bg-[#1C120E] ring-1 ring-[#7A241C] text-[#30231E] dark:text-[#FFF8EB]'
+                        : 'border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/30 dark:bg-[#1A120F] hover:bg-[#F2E5D0] dark:hover:bg-[#271C17] text-[#6B544B] dark:text-[#D1C0B4]'
                     }`}
                   >
-                    <div className="min-w-0">
-                      <div className="font-serif font-bold text-sm text-stone-900 truncate">
-                        {restaurant.name}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-[#1C120E]">
+                        <CulinaryArtwork
+                          type={restaurant.artworkType || 'default'}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <div className="text-[11px] text-stone-500 truncate">
-                        {restaurant.branch} • {restaurant.locality}
-                      </div>
-                      <div className="text-[11px] text-amber-800 font-medium truncate mt-0.5">
-                        {restaurant.speciality}
+
+                      <div className="min-w-0">
+                        <div className="font-serif font-bold text-sm text-[#30231E] dark:text-[#FFF8EB] truncate">
+                          {restaurant.name}
+                        </div>
+                        <div className="text-[11px] text-[#8C766B] truncate">
+                          {restaurant.locality}
+                        </div>
                       </div>
                     </div>
 
                     <div
                       className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-amber-600 text-white' : 'bg-stone-200 text-stone-500'
+                        isSelected ? 'bg-[#7A241C] text-[#FFF8EB]' : 'bg-[#E8DAC8] dark:bg-[#42322B] text-[#8C766B]'
                       }`}
                     >
                       {isSelected ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -324,14 +329,14 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
             </div>
           </div>
 
-          {/* Submit Action */}
-          <div className="pt-4 border-t border-stone-200">
+          {/* Primary Action Button (Chilli Red) */}
+          <div className="pt-4 border-t border-[#E8DAC8] dark:border-[#42322B]">
             <button
               type="submit"
               disabled={isSubmitting || shortlistedIds.length < 2}
-              className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg transition-all"
+              className="w-full py-4 rounded-xl bg-[#7A241C] hover:bg-[#912D24] disabled:opacity-50 text-[#FFF8EB] font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl transition-all"
             >
-              <Users className="w-5 h-5" />
+              <Users className="w-5 h-5 text-[#D99A35]" />
               <span>
                 {isSubmitting
                   ? 'Generating Secure Room...'
