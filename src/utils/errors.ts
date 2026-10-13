@@ -1,24 +1,27 @@
 import { HyderabadError, HyderabadErrorCode } from '../types';
 
-export const HYDERABAD_ERRORS: Record<HyderabadErrorCode, { hyderabadMessage: string; defaultAction: string; actionType?: HyderabadError['actionType'] }> = {
+export const HYDERABAD_ERRORS: Record<
+  HyderabadErrorCode,
+  { hyderabadMessage: string; defaultAction: string; actionType?: HyderabadError['actionType'] }
+> = {
   LOCATION_PERMISSION_DENIED: {
-    hyderabadMessage: 'Arrey miya, location permission ivvu ra! Lekapothe distance ela cheppali?',
+    hyderabadMessage: 'Hero location reveal cheyyaledu! Permission ivvu leda locality enter cheyyi.',
     defaultAction: 'Allow GPS in browser settings or filter by locality manually.',
     actionType: 'enable_location'
   },
   NO_RESTAURANTS_FOUND: {
-    hyderabadMessage: 'Biryani drought, bhai! Radius penchi choodu.',
+    hyderabadMessage: 'Ee radius lo biryani hero dorakaledu bhai. Search area penchala?',
     defaultAction: 'Increase your search distance or clear active locality filters.',
     actionType: 'increase_radius'
   },
   NETWORK_ERROR: {
-    hyderabadMessage: 'Signal gaya, biryani plan aagaya! Check your internet.',
+    hyderabadMessage: 'Connection lo interval padindi! Internet check chesi malli try cheyyi.',
     defaultAction: 'Check your mobile data or Wi-Fi connection and retry.',
     actionType: 'retry'
   },
   ROOM_EXPIRED: {
-    hyderabadMessage: 'Mehfil khatam, bhai! Start a fresh voting room.',
-    defaultAction: 'This voting room has timed out. Create a new room for your group.',
+    hyderabadMessage: 'Ee scene ki pack-up ayipoyindi, bhai. Kotha room start cheddam.',
+    defaultAction: 'This voting room has timed out. Create a fresh room for your gang.',
     actionType: 'home'
   },
   ROOM_NOT_FOUND: {
@@ -27,12 +30,12 @@ export const HYDERABAD_ERRORS: Record<HyderabadErrorCode, { hyderabadMessage: st
     actionType: 'retry'
   },
   ROOM_ALREADY_CLOSED: {
-    hyderabadMessage: 'Host faisla le liya! Voting is locked now.',
+    hyderabadMessage: 'Final verdict vachesthondi! Voting is locked now.',
     defaultAction: 'Voting has closed. View the final group results.',
     actionType: 'home'
   },
   VOTE_FAILED: {
-    hyderabadMessage: 'Vote traffic mein atak gaya! Malli try cheyyi.',
+    hyderabadMessage: 'Vote climax daggara miss ayindi! Malli try cheyyi.',
     defaultAction: 'We could not record your vote. Tap candidate to vote again.',
     actionType: 'retry'
   },
@@ -47,7 +50,7 @@ export const HYDERABAD_ERRORS: Record<HyderabadErrorCode, { hyderabadMessage: st
     actionType: 'login'
   },
   SERVER_ERROR: {
-    hyderabadMessage: 'System ki dum kam pad gaya! Malli try cheyyi.',
+    hyderabadMessage: 'Backend ki interval kavali anukunta! Konchem aagi malli try cheyyi.',
     defaultAction: 'Something went wrong with the server. Please try again in a moment.',
     actionType: 'retry'
   },
@@ -57,7 +60,7 @@ export const HYDERABAD_ERRORS: Record<HyderabadErrorCode, { hyderabadMessage: st
     actionType: 'retry'
   },
   HOST_ONLY_ACTION: {
-    hyderabadMessage: 'Khaali room host ee voting close cheyagalaru!',
+    hyderabadMessage: 'Director cut! Khaali room host ee voting close cheyagalaru.',
     defaultAction: 'Only the creator of this room can finalize the vote.',
     actionType: 'retry'
   }
@@ -65,7 +68,7 @@ export const HYDERABAD_ERRORS: Record<HyderabadErrorCode, { hyderabadMessage: st
 
 export function createHyderabadError(code: HyderabadErrorCode, technicalDetails?: string): HyderabadError {
   const meta = HYDERABAD_ERRORS[code] || HYDERABAD_ERRORS.SERVER_ERROR;
-  
+
   if (technicalDetails && process.env.NODE_ENV !== 'production') {
     console.warn(`[Biryani Bandi Error ${code}]:`, technicalDetails);
   }

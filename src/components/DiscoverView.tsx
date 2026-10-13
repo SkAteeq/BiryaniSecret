@@ -8,7 +8,8 @@ import {
   Compass,
   AlertTriangle,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Dices
 } from 'lucide-react';
 import { Restaurant, HyderabadError } from '../types';
 import { HYDERABAD_RESTAURANTS, getAllLocalities } from '../data/restaurants';
@@ -20,6 +21,7 @@ import {
 } from '../utils/geo';
 import { createHyderabadError } from '../utils/errors';
 import { CulinaryArtwork } from './CulinaryArtwork';
+import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 interface DiscoverViewProps {
   shortlistedIds: string[];
@@ -41,6 +43,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
   const [isLocating, setIsLocating] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
   const [showHiddenGemsOnly, setShowHiddenGemsOnly] = useState(false);
+  const [directorsCutId, setDirectorsCutId] = useState<string | null>(null);
 
   const localities = useMemo(() => ['ALL', ...getAllLocalities()], []);
 
@@ -116,9 +119,29 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       });
   }, [searchQuery, selectedLocality, radiusFilter, userCoords, showHiddenGemsOnly]);
 
+  // Identify the closest restaurant when distance is available
+  const nearestHeroId = useMemo(() => {
+    if (!userCoords) return null;
+    const withDist = filteredRestaurants.filter((r) => r.distanceKm !== null);
+    if (withDist.length === 0) return null;
+    const min = Math.min(...withDist.map((r) => r.distanceKm as number));
+    return withDist.find((r) => r.distanceKm === min)?.id || null;
+  }, [filteredRestaurants, userCoords]);
+
+  // Director's Cut random surprise pick
+  const handleDirectorsCut = () => {
+    if (filteredRestaurants.length === 0) return;
+    const randomPick = filteredRestaurants[Math.floor(Math.random() * filteredRestaurants.length)];
+    setDirectorsCutId(randomPick.id);
+    const element = document.getElementById(`restaurant-card-${randomPick.id}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24">
-      {/* Shortlist Floating Sticky Bar */}
+      {/* Shortlist Floating Sticky Bar (Finalist List) */}
       {shortlistedIds.length > 0 && (
         <div className="sticky top-20 z-30 bg-[#30231E] text-[#FFF8EB] p-3.5 sm:p-4 rounded-2xl shadow-2xl border border-[#D99A35] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -126,27 +149,41 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               {shortlistedIds.length}
             </span>
             <div className="text-xs sm:text-sm font-semibold truncate">
-              {shortlistedIds.length === 1 ? '1 outlet shortlisted' : `${shortlistedIds.length} outlets shortlisted for voting`}
+              {shortlistedIds.length === 1
+                ? `1 contender in ${CINEMA_DIALOGUES.discovery.finalistList}`
+                : `${shortlistedIds.length} contenders in ${CINEMA_DIALOGUES.discovery.finalistList}`}
             </div>
           </div>
           <button
             onClick={onProceedToCreateRoom}
-            className="px-4 py-2 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs sm:text-sm transition-colors shrink-0 shadow-md"
+            className="px-4 py-2 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs sm:text-sm transition-colors shrink-0 shadow-md flex items-center gap-1.5"
           >
-            Create Voting Room →
+            <span>Lock Scene for Vote →</span>
           </button>
         </div>
       )}
 
       {/* Filter and Control Panel */}
       <div className="bg-[#FFFFFF] dark:bg-[#251B17] p-5 sm:p-6 rounded-3xl border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-4">
-        <div>
-          <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] tracking-tight">
-            Curated Hyderabad Outlets
-          </h2>
-          <p className="mt-1 text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4]">
-            Branch-verified coordinates, authentic food photography, and direct Google Maps directions.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] tracking-tight">
+              Curated Hyderabad Outlets
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4]">
+              Branch-verified coordinates, authentic food photography, and direct Google Maps directions.
+            </p>
+          </div>
+
+          {/* Director's Cut Surprise Button */}
+          <button
+            onClick={handleDirectorsCut}
+            className="px-3.5 py-1.5 rounded-xl bg-[#FFF8EB] dark:bg-[#1E1410] border border-[#D99A35]/60 hover:bg-[#D99A35] hover:text-[#1E110E] text-[#7A241C] dark:text-[#D99A35] text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm shrink-0"
+            title="Pick a random biryani candidate"
+          >
+            <Dices className="w-3.5 h-3.5" />
+            <span>{CINEMA_DIALOGUES.discovery.directorsCut}</span>
+          </button>
         </div>
 
         {/* Search Bar */}
@@ -161,7 +198,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
           />
         </div>
 
-        {/* Locality Filter Buttons (Functional segmented buttons) */}
+        {/* Locality Filter Buttons */}
         <div className="space-y-1.5">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#6B544B] dark:text-[#D1C0B4]">
             Filter by Locality
@@ -197,12 +234,12 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF2EA] dark:bg-[#202B1F] text-[#486447] dark:text-[#78A376] border border-[#486447]/30 font-bold text-xs transition-colors"
               >
                 <Compass className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-                <span>{isLocating ? 'Locating Hyderabad...' : 'Use My GPS Location'}</span>
+                <span>{isLocating ? 'Locating Hyderabad...' : 'Spot Nearest Hero (GPS)'}</span>
               </button>
             ) : (
               <span className="text-xs text-[#486447] dark:text-[#78A376] font-semibold flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
-                <span>GPS Active (approx. straight-line distance)</span>
+                <span>GPS Ready · Showing Straight-Line Radius</span>
               </span>
             )}
           </div>
@@ -234,13 +271,13 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               }`}
             >
               <Sparkles className="w-3 h-3 text-[#D99A35]" />
-              <span>Hidden Gems Only</span>
+              <span>{CINEMA_DIALOGUES.discovery.underratedBlockbusters}</span>
             </button>
           </div>
 
           {locationDenied && (
             <p className="text-xs text-[#7A241C] dark:text-[#D99A35] bg-[#F7EBEA] dark:bg-[#331815] p-2.5 rounded-xl border border-[#7A241C]/30">
-              GPS permission was denied. You can still discover every outlet and filter by locality manually!
+              Hero location reveal cheyyaledu! You can still explore every blockbuster outlet and filter by locality manually.
             </p>
           )}
         </div>
@@ -249,7 +286,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       {/* Count & Reset Row */}
       <div className="flex items-center justify-between text-xs text-[#6B544B] dark:text-[#D1C0B4] px-1">
         <span>
-          Showing <strong className="text-[#30231E] dark:text-[#FFF8EB]">{filteredRestaurants.length}</strong> outlets in Hyderabad
+          Showing <strong className="text-[#30231E] dark:text-[#FFF8EB]">{filteredRestaurants.length}</strong> blockbuster outlets in Hyderabad
         </span>
         {(searchQuery || selectedLocality !== 'ALL' || radiusFilter !== null || showHiddenGemsOnly) && (
           <button
@@ -258,6 +295,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               setSelectedLocality('ALL');
               setRadiusFilter(null);
               setShowHiddenGemsOnly(false);
+              setDirectorsCutId(null);
             }}
             className="text-[#7A241C] dark:text-[#D99A35] hover:underline flex items-center gap-1 font-semibold"
           >
@@ -274,10 +312,10 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
             <AlertTriangle className="w-6 h-6" />
           </div>
           <h3 className="font-serif font-bold text-xl text-[#30231E] dark:text-[#FFF8EB]">
-            Biryani drought, bhai! Radius penchi choodu.
+            Ee radius lo biryani hero dorakaledu bhai!
           </h3>
           <p className="text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4] max-w-md mx-auto">
-            No verified outlets match your current filter combination. Try clearing the search or widening the radius.
+            No verified outlets match your current filter combination. Try clearing search or widening the radius.
           </p>
           <button
             onClick={() => {
@@ -288,19 +326,25 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
             }}
             className="px-4 py-2 rounded-xl bg-[#7A241C] text-[#FFF8EB] font-bold text-xs"
           >
-            Show All Hyderabad Outlets
+            Show All Blockbuster Outlets
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredRestaurants.map((restaurant) => {
             const isShortlisted = shortlistedIds.includes(restaurant.id);
+            const isNearestHero = restaurant.id === nearestHeroId;
+            const isDirectorsCut = restaurant.id === directorsCutId;
+            const isBudgetStar = restaurant.pricePerPersonMin !== null && restaurant.pricePerPersonMin <= 220;
 
             return (
               <div
+                id={`restaurant-card-${restaurant.id}`}
                 key={restaurant.id}
                 className={`bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl border transition-all overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-lg ${
-                  isShortlisted
+                  isDirectorsCut
+                    ? 'border-[#D99A35] ring-4 ring-[#D99A35]/30 scale-101'
+                    : isShortlisted
                     ? 'border-[#7A241C] ring-2 ring-[#7A241C]/30'
                     : 'border-[#E8DAC8] dark:border-[#42322B]'
                 }`}
@@ -319,13 +363,31 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                   {/* Card Header Overlay */}
                   <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
                     <div>
-                      {/* Clean Unboxed Metadata without pills */}
+                      {/* Context-aware cinema labels */}
                       <div className="text-[11px] font-semibold text-[#D99A35] flex items-center gap-1.5 flex-wrap drop-shadow">
                         <span>{restaurant.locality}</span>
+                        {isNearestHero && (
+                          <>
+                            <span aria-hidden="true" className="text-[#D99A35]/60">·</span>
+                            <span className="text-[#486447] dark:text-[#78A376] font-bold">
+                              ★ {CINEMA_DIALOGUES.discovery.nearestHero}
+                            </span>
+                          </>
+                        )}
+                        {isBudgetStar && (
+                          <>
+                            <span aria-hidden="true" className="text-[#D99A35]/60">·</span>
+                            <span className="text-[#FFF8EB] font-bold">
+                              {CINEMA_DIALOGUES.discovery.pocketFriendlyStar}
+                            </span>
+                          </>
+                        )}
                         {restaurant.isHiddenGem && (
                           <>
                             <span aria-hidden="true" className="text-[#D99A35]/60">·</span>
-                            <span className="text-[#FFF8EB] font-bold">Hidden Gem</span>
+                            <span className="text-[#D99A35] font-bold">
+                              {CINEMA_DIALOGUES.discovery.underratedBlockbusters}
+                            </span>
                           </>
                         )}
                       </div>
@@ -343,7 +405,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                           ? 'bg-[#7A241C] text-[#FFF8EB] scale-105 ring-2 ring-[#D99A35]'
                           : 'bg-[#FFF8EB] text-[#30231E] hover:bg-[#D99A35] hover:text-[#1E110E]'
                       }`}
-                      title={isShortlisted ? 'Remove from voting shortlist' : 'Add to voting shortlist'}
+                      title={isShortlisted ? 'Remove from voting shortlist' : 'Add to finalist list'}
                     >
                       {isShortlisted ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                     </button>
@@ -398,7 +460,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Card Bottom Strip with Distance & Directions Button */}
+                  {/* Card Bottom Strip: "Take Me to the Dum" Directions Button */}
                   <div className="pt-3 border-t border-[#E8DAC8]/60 dark:border-[#42322B]/60 flex items-center justify-between gap-2">
                     <div className="text-xs font-semibold">
                       {restaurant.distanceKm !== null ? (
@@ -415,8 +477,9 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFF8EB] dark:bg-[#1E1410] border border-[#D99A35]/50 text-[#7A241C] dark:text-[#D99A35] font-bold text-xs hover:bg-[#7A241C] hover:text-[#FFF8EB] dark:hover:bg-[#7A241C] transition-colors"
+                      title="Open Google Maps road navigation"
                     >
-                      <span>Directions</span>
+                      <span>{CINEMA_DIALOGUES.discovery.takeMeToDum}</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>

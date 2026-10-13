@@ -6,12 +6,15 @@ import {
   RotateCcw,
   Share2,
   Sparkles,
-  CheckCheck
+  CheckCheck,
+  Clapperboard,
+  Crown
 } from 'lucide-react';
 import { Room, Vote, HyderabadError } from '../types';
 import { getRestaurantById } from '../data/restaurants';
 import { subscribeToRoomVotes } from '../firebase/roomService';
 import { CulinaryArtwork } from './CulinaryArtwork';
+import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 interface ResultsViewProps {
   room: Room;
@@ -50,13 +53,13 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   const winnerRestaurant = room.winnerId && !isTie && !isZeroVotes ? getRestaurantById(room.winnerId) : null;
 
   const handleShareResult = async () => {
-    const text = `Biryani Bandi Outcome: ${room.winnerName || 'Decision made'}!`;
+    const text = `Biryani Bandi Verdict: Box office hit ${room.winnerName || 'Winner'} declared!`;
     const url = window.location.href;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Biryani Decision Winner',
+          title: 'Biryani Bandi Climax Verdict',
           text,
           url
         });
@@ -83,10 +86,10 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               dishName={winnerRestaurant.name}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#261A15] via-[#261A15]/40 to-transparent" />
-            
+
             <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D99A35] text-[#1E110E] text-xs font-black uppercase tracking-wider shadow-lg">
               <Trophy className="w-3.5 h-3.5" />
-              <span>Mehfil Ka Faisla • Group Winner</span>
+              <span>{CINEMA_DIALOGUES.voting.winnerAnnounced}</span>
             </div>
           </div>
         )}
@@ -95,28 +98,35 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           {isZeroVotes ? (
             <div className="space-y-3 py-2">
               <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#FFF8EB]">
-                No Votes Cast!
+                Zero Votes Recorded!
               </h2>
               <p className="text-sm text-[#FFF8EB]/80 max-w-md mx-auto">
-                Mehfil mein kisi ne vote nahi daala. Start another vote or pick any legendary spot from our curated list!
+                Ee scene lo evaru vote veyyaledu bhai! Start a fresh voting room or pick any verified Hyderabad hero from our list.
               </p>
             </div>
           ) : isTie ? (
             <div className="space-y-3 py-2">
               <div className="flex items-center justify-center gap-2 text-[#D99A35]">
-                <Sparkles className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-widest">Double Feast Tie</span>
-                <Sparkles className="w-5 h-5" />
+                <Clapperboard className="w-5 h-5 text-[#D99A35]" />
+                <span className="font-bold text-xs uppercase tracking-widest">
+                  {CINEMA_DIALOGUES.chatbot.tie}
+                </span>
+                <Sparkles className="w-5 h-5 text-[#D99A35]" />
               </div>
               <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#FFF8EB]">
                 {room.winnerName}
               </h2>
               <p className="text-xs sm:text-sm text-[#FFF8EB]/80 max-w-md mx-auto">
-                The group tied with equal votes! You can order from both or flip a coin for the feast.
+                Both contenders delivered blockbuster performance with equal votes! You can order from both or flip a coin for the climax.
               </p>
             </div>
           ) : winnerRestaurant ? (
             <div className="space-y-3">
+              <div className="inline-flex items-center gap-1 text-xs font-bold text-[#D99A35] uppercase tracking-wider">
+                <Crown className="w-4 h-4 text-[#D99A35]" />
+                <span>{CINEMA_DIALOGUES.chatbot.winner}</span>
+              </div>
+
               <h2 className="font-serif font-black text-3xl sm:text-4xl text-[#FFF8EB] leading-tight">
                 {winnerRestaurant.name}
               </h2>
@@ -124,11 +134,11 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 {winnerRestaurant.branch} · {winnerRestaurant.locality}
               </p>
 
-              <div className="p-3 rounded-2xl bg-[#1C120E]/80 border border-[#D99A35]/40 max-w-md mx-auto text-xs text-[#FFF8EB]/90 italic leading-relaxed">
+              <div className="p-3.5 rounded-2xl bg-[#1C120E]/80 border border-[#D99A35]/40 max-w-md mx-auto text-xs text-[#FFF8EB]/90 italic leading-relaxed">
                 "{winnerRestaurant.curatorNotes}"
               </div>
 
-              {/* Action Buttons: Chilli Red for Driving Directions */}
+              {/* Action Buttons: Chilli Red for "Take Me to the Dum" */}
               <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
                 <a
                   href={winnerRestaurant.googleMapsUrl}
@@ -137,7 +147,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                   className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-sm shadow-xl transition-transform active:scale-95"
                 >
                   <Navigation className="w-4 h-4 text-[#D99A35]" />
-                  <span>Get Google Maps Directions</span>
+                  <span>{CINEMA_DIALOGUES.discovery.takeMeToDum}</span>
                   <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                 </a>
 
@@ -146,7 +156,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                   className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl bg-[#3D2921] hover:bg-[#4E352B] text-[#FFF8EB] font-bold text-sm border border-[#D99A35]/50 transition-colors"
                 >
                   {copiedShare ? <CheckCheck className="w-4 h-4 text-[#486447]" /> : <Share2 className="w-4 h-4 text-[#D99A35]" />}
-                  <span>{copiedShare ? 'Copied' : 'Share Outcome'}</span>
+                  <span>{copiedShare ? 'Copied' : 'Share Climax Verdict'}</span>
                 </button>
               </div>
             </div>
@@ -163,14 +173,14 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         <div className="flex items-center justify-between text-xs">
           <div>
             <h3 className="font-serif font-bold text-lg text-[#30231E] dark:text-[#FFF8EB]">
-              Final Vote Breakdown
+              Box Office Scorecard
             </h3>
             <p className="text-[#8C766B]">
-              {totalVotes} total votes recorded across group members
+              {totalVotes} total verified audience votes across the gang
             </p>
           </div>
           <span className="font-mono text-[#D99A35] font-bold">
-            ROOM: {room.id}
+            SCENE: {room.id}
           </span>
         </div>
 
@@ -199,7 +209,6 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                   </span>
                 </div>
 
-                {/* Saffron Gold Progress Bar for Winner */}
                 <div className="w-full h-2.5 rounded-full bg-[#E8DAC8] dark:bg-[#34241D] overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
@@ -217,7 +226,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                     rel="noopener noreferrer"
                     className="text-[#7A241C] dark:text-[#D99A35] hover:underline flex items-center gap-0.5 font-medium"
                   >
-                    <span>Maps</span>
+                    <span>Take Me to Dum</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
                 </div>
@@ -231,7 +240,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       {votes.length > 0 && (
         <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-5 sm:p-6 border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-3">
           <h4 className="font-serif font-bold text-base text-[#30231E] dark:text-[#FFF8EB]">
-            Group Choices ({votes.length})
+            Gang Verdict Breakdown ({votes.length})
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             {votes.map((v) => (
@@ -254,7 +263,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           className="flex-1 py-4 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-sm flex items-center justify-center gap-2 shadow-xl transition-all"
         >
           <RotateCcw className="w-4 h-4 text-[#D99A35]" />
-          <span>Start Another Vote</span>
+          <span>Start Next Biryani Scene</span>
         </button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { Restaurant } from '../types';
-import { HYDERABAD_RESTAURANTS } from '../data/restaurants';
 import { formatDistance } from './geo';
+import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 export interface ChatEngineResult {
   text: string;
@@ -8,8 +8,7 @@ export interface ChatEngineResult {
 }
 
 /**
- * Intelligent rule-based Hyderabad foodie engine for Biryani Buddy.
- * Used when Gemini API is unavailable or as instant offline fallback.
+ * Intelligent rule-based Hyderabad & Tollywood foodie engine for Biryani Buddy.
  * Strictly adheres to verified data and actual calculated distances.
  */
 export function generateFallbackResponse(
@@ -30,17 +29,17 @@ export function generateFallbackResponse(
 
     if (sorted.length === 0) {
       return {
-        text: `Arrey bhai, location permission ledu! Share your GPS or pick a locality so I can calculate your exact straight-line distance. But straight from the heart, Hotel Shadab in Old City or Bawarchi at RTC X Roads never disappoints!`,
+        text: `Hero location reveal cheyyaledu! Share your GPS or pick a reference locality so I can calculate your exact straight-line distance. But straight from the heart, Hotel Shadab in Old City or Bawarchi at RTC X Roads never fails!`,
         recommendedRestaurantIds: ['shadab-charminar', 'bawarchi-rtcxroads']
       };
     }
 
     sorted.sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
-    const top2 = sorted.slice(0, 2);
+    const topClosest = sorted.slice(0, 2);
 
     return {
-      text: `Arrey bhai, biryani mission started! 🍛 Here are your nearest options based on ${userLocationLabel || 'your selected location'}. Remember, these are approximate straight-line distances; actual road traffic may vary. Shall we put these to a group vote?`,
-      recommendedRestaurantIds: top2.map((r) => r.id)
+      text: `${CINEMA_DIALOGUES.chatbot.searchingNearby}\n\n${CINEMA_DIALOGUES.chatbot.closestFound}\n\nNote: Distances are approximate straight-line figures; road driving distance and travel time may differ. Shall we put these two to a vote?`,
+      recommendedRestaurantIds: topClosest.map((r) => r.id)
     };
   }
 
@@ -54,7 +53,7 @@ export function generateFallbackResponse(
 
     if (withinRadius.length === 0) {
       return {
-        text: `Biryani drought, bhai! No verified outlets found within ${limitKm} km of your location. Try expanding your search to 10 km or 15 km to hit the legendary spots!`,
+        text: `${CINEMA_DIALOGUES.chatbot.noMatch}\n\nTry expanding your radius to 10 km or 15 km to hit the blockbuster spots!`,
         recommendedRestaurantIds: []
       };
     }
@@ -63,7 +62,7 @@ export function generateFallbackResponse(
     const topChoices = withinRadius.slice(0, 3);
 
     return {
-      text: `Miya, good news! Found ${withinRadius.length} authentic spots within ${limitKm} km (approx. straight-line distance). Here are the top contenders:`,
+      text: `Miya, scene set! Found ${withinRadius.length} blockbuster contenders within ${limitKm} km (approx. straight-line distance). Here are the top picks for your ballot:`,
       recommendedRestaurantIds: topChoices.map((r) => r.id)
     };
   }
@@ -76,7 +75,7 @@ export function generateFallbackResponse(
       .slice(0, 3);
 
     return {
-      text: `Pocket-friendly biryani feast, bhai! Rumaan in Khilwat and PR Biryani in Habsiguda are legendary for explosive flavor without lightening your wallet:`,
+      text: `Pocket-Friendly Star selection, bhai! Rumaan in Khilwat and PR Biryani in Habsiguda deliver mass-flavor without lightening your wallet:`,
       recommendedRestaurantIds: budgetSpots.map((r) => r.id)
     };
   }
@@ -93,18 +92,13 @@ export function generateFallbackResponse(
       const d2 = r2.distanceKm !== null ? formatDistance(r2.distanceKm) : 'distance unverified';
 
       return {
-        text: `Ekdum classic heavyweight match, ustaad!
-• ${r1.name} (${r1.locality}): ${d1}. Speciality: ${r1.speciality}.
-• ${r2.name} (${r2.locality}): ${d2}. Speciality: ${r2.speciality}.
-
-Both are royal grade. Put them in a room vote and let your gang decide the winner!`,
+        text: `${CINEMA_DIALOGUES.chatbot.comparing}\n\n• ${r1.name} (${r1.locality}): ${d1}. Speciality: ${r1.speciality}.\n• ${r2.name} (${r2.locality}): ${d2}. Speciality: ${r2.speciality}.\n\nBoth are royal grade. Put them to a vote and let the gang declare the winner!`,
         recommendedRestaurantIds: [r1.id, r2.id]
       };
     }
 
-    // Default top comparison
     return {
-      text: `Comparing the two titans: Hotel Shadab (Old City mutton specialist) versus Bawarchi Restaurant (RTC X Roads spicy powerhouse). Here they are for your gang to vote:`,
+      text: `${CINEMA_DIALOGUES.chatbot.comparing}\n\nComparing Hotel Shadab (Old City mutton legend) versus Bawarchi Restaurant (RTC X Roads spicy powerhouse). Here they are for your ballot:`,
       recommendedRestaurantIds: ['shadab-charminar', 'bawarchi-rtcxroads']
     };
   }
@@ -112,7 +106,7 @@ Both are royal grade. Put them in a room vote and let your gang decide the winne
   // 5. Open now query
   if (q.includes('open') || q.includes('timing') || q.includes('hours') || q.includes('late night')) {
     return {
-      text: `Bhai, for late-night cravings, Hotel Shadab in Old City (open till 02:00 AM) and Shah Ghouse in Gachibowli (open till 02:00 AM) are the ultimate night-owl sanctuaries!`,
+      text: `For midnight interval cravings, Hotel Shadab in Old City (open till 02:00 AM) and Shah Ghouse in Gachibowli (open till 02:00 AM) are the ultimate night-owl sanctuaries!`,
       recommendedRestaurantIds: ['shadab-charminar', 'shah-ghouse-gachibowli']
     };
   }
@@ -120,14 +114,14 @@ Both are royal grade. Put them in a room vote and let your gang decide the winne
   // 6. Help choose a winner / Decision query
   if (q.includes('choose') || q.includes('winner') || q.includes('decide') || q.includes('recommend')) {
     return {
-      text: `Faisla lena mushkil hai na, bhai? Here is the golden rule: If you want slow-cooked Mutton Dum, go Shadab. If you want fiery Chicken Dum with spicy salan, go Bawarchi. If you want claypot kunda aroma, go Naidu Gari. Add them to your vote ballot below!`,
+      text: `${CINEMA_DIALOGUES.chatbot.undecided}\n\n${CINEMA_DIALOGUES.chatbot.askToVote}\n\nIf you want slow-cooked Mutton Dum, lock Shadab. If you want fiery Chicken Dum, lock Bawarchi. If you want earthen claypot aroma, lock Naidu Gari. Add them to your ballot below:`,
       recommendedRestaurantIds: ['shadab-charminar', 'bawarchi-rtcxroads', 'naidu-gari-kunda-manikonda']
     };
   }
 
-  // Default friendly response
+  // Default welcome dialogue
   return {
-    text: `Bhai, biryani ka mood hai? 🍛 I can help you find verified outlets near your GPS location, compare prices, or add candidates to your live group ballot! Pick a quick option below or ask me anything:`,
+    text: `${CINEMA_DIALOGUES.chatbot.greeting}\n\nI can calculate approximate straight-line distances from your location, compare top contenders, and help your gang lock the winning biryani scene! Pick a quick option below:`,
     recommendedRestaurantIds: ['shadab-charminar', 'bawarchi-rtcxroads']
   };
 }

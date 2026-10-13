@@ -15,6 +15,7 @@ import { HYDERABAD_RESTAURANTS } from '../data/restaurants';
 import { createRoom } from '../firebase/roomService';
 import { createHyderabadError } from '../utils/errors';
 import { CulinaryArtwork } from './CulinaryArtwork';
+import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 interface CreateRoomViewProps {
   shortlistedIds: string[];
@@ -131,13 +132,13 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
 
           <div>
             <div className="text-xs font-bold text-[#486447] dark:text-[#78A376] tracking-widest uppercase">
-              Voting Room Live
+              {CINEMA_DIALOGUES.voting.roomCreated}
             </div>
             <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] mt-1">
-              Mehfil is Ready!
+              Scene Set, Mehfil Ready!
             </h2>
             <p className="text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4] mt-1">
-              Share this room code with your friends so they can vote immediately.
+              {CINEMA_DIALOGUES.voting.shareRoom}
             </p>
           </div>
 

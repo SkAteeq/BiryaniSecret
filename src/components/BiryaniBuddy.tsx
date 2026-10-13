@@ -23,6 +23,7 @@ import {
 } from '../utils/geo';
 import { generateFallbackResponse } from '../utils/fallbackChatEngine';
 import { createHyderabadError } from '../utils/errors';
+import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 export interface ChatMessage {
   id: string;
@@ -53,12 +54,12 @@ export const BiryaniBuddy: React.FC<BiryaniBuddyProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initial welcome message
+  // Initial welcome message with Tollywood/Bollywood mass dialogue
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       sender: 'buddy',
-      text: "Bhai, biryani ka mood hai? Let's find your nearest dum! 🍛\n\nI can calculate approximate straight-line distances from your location, compare top Hyderabad spots, and help your group build a winning vote shortlist.",
+      text: `${CINEMA_DIALOGUES.chatbot.greeting}\n\nI can calculate approximate straight-line distances from your location, compare top contenders, and help your gang lock the winning biryani scene! Pick a quick option below:`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       recommendedIds: ['shadab-charminar', 'bawarchi-rtcxroads']
     }
@@ -130,7 +131,7 @@ export const BiryaniBuddy: React.FC<BiryaniBuddyProps> = ({
     const ackMessage: ChatMessage = {
       id: String(Date.now()),
       sender: 'buddy',
-      text: `Set your reference location to ${locality}! Calculating straight-line distances from here.`,
+      text: `${CINEMA_DIALOGUES.chatbot.searchingNearby}\n\nReference location locked to ${locality}! Calculating straight-line distances from here.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMessages((prev) => [...prev, ackMessage]);
@@ -162,7 +163,7 @@ export const BiryaniBuddy: React.FC<BiryaniBuddyProps> = ({
       const promptMsg: ChatMessage = {
         id: String(Date.now() + 1),
         sender: 'buddy',
-        text: "Arrey miya, to find your nearest dum, I need your location! Tap 'Use My GPS' or pick your locality below:",
+        text: `Arrey miya, ${CINEMA_DIALOGUES.chatbot.searchingNearby} Share your GPS or pick your reference locality below:`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, promptMsg]);
@@ -281,7 +282,7 @@ export const BiryaniBuddy: React.FC<BiryaniBuddyProps> = ({
       id: String(Date.now()),
       sender: 'buddy',
       text: isAdded
-        ? `Zabardast! Added ${restaurant.name} to your group voting ballot. Your friends can vote on it!`
+        ? `Mass entry! Added ${restaurant.name} to your group voting ballot. ${CINEMA_DIALOGUES.chatbot.askToVote}`
         : `Removed ${restaurant.name} from the shortlist.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Users,
   Check,
@@ -7,7 +7,10 @@ import {
   Lock,
   Flame,
   Copy,
-  CheckCheck
+  CheckCheck,
+  Crown,
+  Sparkles,
+  Clapperboard
 } from 'lucide-react';
 import { Room, Vote, UserProfile, HyderabadError } from '../types';
 import { getRestaurantById } from '../data/restaurants';
@@ -19,6 +22,7 @@ import {
 } from '../firebase/roomService';
 import { createHyderabadError } from '../utils/errors';
 import { CulinaryArtwork } from './CulinaryArtwork';
+import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 interface VotingRoomViewProps {
   roomId: string;
@@ -39,9 +43,17 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [cinematicToast, setCinematicToast] = useState<string | null>(null);
+
+  // Track previous leader and previous voter count for cinematic notifications
+  const prevLeaderIdRef = useRef<string | null>(null);
+  const prevVoteCountRef = useRef<number>(0);
 
   useEffect(() => {
     if (!roomId) return;
+
+    // Show initial room entry dialogue
+    showToast(CINEMA_DIALOGUES.voting.roomCreated);
 
     const unsubscribeRoom = subscribeToRoom(
       roomId,
@@ -53,7 +65,8 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
         setRoom(updatedRoom);
 
         if (updatedRoom.status === 'closed') {
-          onViewResults(updatedRoom);
+          showToast(CINEMA_DIALOGUES.voting.closingVote);
+          setTimeout(() => onViewResults(updatedRoom), 800);
         }
       },
       (err) => {
@@ -64,6 +77,11 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     const unsubscribeVotes = subscribeToRoomVotes(
       roomId,
       (updatedVotes) => {
+        // Friend joined detection
+        if (prevVoteCountRef.current > 0 && updatedVotes.length > prevVoteCountRef.current) {
+          showToast(CINEMA_DIALOGUES.voting.friendJoined);
+        }
+        prevVoteCountRef.current = updatedVotes.length;
         setVotes(updatedVotes);
       },
       (err) => {
@@ -77,6 +95,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     };
   }, [roomId, onErrorPrompt, onViewResults]);
 
+  // Expiry countdown timer
   useEffect(() => {
     if (!room?.expiresAt) return;
 
@@ -116,6 +135,31 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   }, [room?.candidateIds, votes]);
 
   const totalVotesCount = votes.length;
+
+  // Identify leading restaurant (spotlight)
+  const currentLeaderId = useMemo(() => {
+    if (totalVotesCount === 0 || !room?.candidateIds) return null;
+    const maxVotes = Math.max(...Object.values(voteTallies));
+    if (maxVotes <= 0) return null;
+    const leaders = Object.keys(voteTallies).filter((id) => voteTallies[id] === maxVotes);
+    return leaders.length === 1 ? leaders[0] : null; // single clear leader
+  }, [voteTallies, totalVotesCount, room?.candidateIds]);
+
+  // Plot twist: leader change detection
+  useEffect(() => {
+    if (currentLeaderId && prevLeaderIdRef.current && currentLeaderId !== prevLeaderIdRef.current) {
+      showToast(CINEMA_DIALOGUES.voting.leaderChanged);
+    }
+    prevLeaderIdRef.current = currentLeaderId;
+  }, [currentLeaderId]);
+
+  const showToast = (msg: string) => {
+    setCinematicToast(msg);
+    setTimeout(() => {
+      setCinematicToast((current) => (current === msg ? null : current));
+    }, 3200);
+  };
+
   const isHost = user && room && user.uid === room.hostId;
 
   const handleCastVote = async (restaurantId: string) => {
@@ -137,6 +181,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     setIsVoting(true);
     try {
       await castVote(roomId, restaurantId, user.displayName);
+      showToast(CINEMA_DIALOGUES.voting.voteSubmitted);
     } catch (err: any) {
       onErrorPrompt(createHyderabadError('VOTE_FAILED', err.message));
     } finally {
@@ -147,12 +192,13 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
   const handleFinalizeVoting = async () => {
     if (!isHost) return;
 
-    if (!confirm('Are you sure you want to finalize voting and announce the winner to all participants?')) {
+    if (!confirm('Climax time! Finalize voting and announce the box-office winner to all participants?')) {
       return;
     }
 
     setIsFinalizing(true);
     try {
+      showToast(CINEMA_DIALOGUES.voting.closingVote);
       await finalizeRoomVoting(roomId);
     } catch (err: any) {
       onErrorPrompt(createHyderabadError('SERVER_ERROR', err.message));
@@ -164,6 +210,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
     const url = window.location.href;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
+    showToast(CINEMA_DIALOGUES.voting.shareRoom);
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
@@ -174,26 +221,33 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
           <Flame className="w-6 h-6" />
         </div>
         <h3 className="font-serif font-bold text-lg text-[#30231E] dark:text-[#FFF8EB]">
-          Connecting to Mehfil...
+          Screenplay rolling…
         </h3>
-        <p className="text-xs text-[#8C766B]">Checking room status and live ballot</p>
+        <p className="text-xs text-[#8C766B]">Setting up the scene and live voting ballot</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
+      {/* Cinematic Flash Toast */}
+      {cinematicToast && (
+        <div className="sticky top-20 z-40 bg-[#7A241C] text-[#FFF8EB] px-4 py-2.5 rounded-2xl border-2 border-[#D99A35] shadow-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold animate-in fade-in slide-in-from-top-2">
+          <Clapperboard className="w-4 h-4 text-[#D99A35] shrink-0" />
+          <span>{cinematicToast}</span>
+        </div>
+      )}
+
       {/* Room Header Card */}
       <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-5 sm:p-7 border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            {/* Unboxed Metadata without pills */}
             <div className="flex items-center gap-2 text-xs font-semibold text-[#D99A35]">
-              <span>ROOM ACTIVE</span>
+              <span>SCENE ACTIVE</span>
               <span aria-hidden="true">·</span>
               <span className="font-mono text-[#30231E] dark:text-[#FFF8EB]">{room.id}</span>
               <span aria-hidden="true">·</span>
-              <span>HOST: {room.hostName}</span>
+              <span>DIRECTOR: {room.hostName}</span>
             </div>
 
             <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] mt-1">
@@ -205,9 +259,10 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
             <button
               onClick={handleCopyInvite}
               className="px-3.5 py-2 rounded-xl border border-[#D99A35]/50 bg-[#FFF8EB] dark:bg-[#1E1410] text-[#30231E] dark:text-[#FFF8EB] font-bold text-xs flex items-center gap-1.5 transition-colors"
+              title="Share room invitation"
             >
               {copiedLink ? <CheckCheck className="w-3.5 h-3.5 text-[#486447]" /> : <Copy className="w-3.5 h-3.5 text-[#D99A35]" />}
-              <span>{copiedLink ? 'Copied' : 'Invite Gang'}</span>
+              <span>{copiedLink ? 'Copied Link' : 'Call the Gang'}</span>
             </button>
 
             {isHost && (
@@ -217,7 +272,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
                 className="px-4 py-2 rounded-xl bg-[#7A241C] hover:bg-[#912D24] disabled:opacity-50 text-[#FFF8EB] font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
               >
                 <Lock className="w-3.5 h-3.5 text-[#D99A35]" />
-                <span>{isFinalizing ? 'Closing...' : 'Close & Finalize'}</span>
+                <span>{isFinalizing ? 'Climax Rolling...' : 'Declare Verdict'}</span>
               </button>
             )}
           </div>
@@ -228,33 +283,33 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5 font-bold text-[#30231E] dark:text-[#FFF8EB]">
               <Users className="w-4 h-4 text-[#7A241C]" />
-              <span className="tabular-nums">{totalVotesCount} {totalVotesCount === 1 ? 'vote cast' : 'votes cast'}</span>
+              <span className="tabular-nums">{totalVotesCount} {totalVotesCount === 1 ? 'vote recorded' : 'votes recorded'}</span>
             </span>
 
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-[#8C766B]" />
-              <span>{timeRemaining || 'Voting open'}</span>
+              <span>{timeRemaining || 'Voting scene open'}</span>
             </span>
           </div>
 
           <div className="text-[11px] font-semibold">
             {myVote ? (
               <span className="text-[#486447] dark:text-[#78A376]">
-                ✓ Voted for {myVote.restaurantName} (tap any option to switch)
+                ✓ Your punch is for {myVote.restaurantName} (tap any contender to change)
               </span>
             ) : (
               <span className="text-[#7A241C] dark:text-[#D99A35] animate-pulse">
-                👇 Tap a contender below to cast your vote
+                👉 Mana gang lo evaridi final punch? Vote veyandi!
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Candidate Ballot Cards */}
+      {/* Candidate Ballot Cards with Cinematic Spotlight */}
       <div className="space-y-3">
         <h3 className="font-serif font-bold text-lg text-[#30231E] dark:text-[#FFF8EB] px-1">
-          Contenders ({room.candidateIds.length})
+          Finalist Contenders ({room.candidateIds.length})
         </h3>
 
         <div className="space-y-3">
@@ -265,13 +320,16 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
             const voteCount = voteTallies[candidateId] || 0;
             const percentage = totalVotesCount > 0 ? Math.round((voteCount / totalVotesCount) * 100) : 0;
             const isMySelection = myVote?.restaurantId === candidateId;
+            const isLeader = candidateId === currentLeaderId && totalVotesCount > 0;
 
             return (
               <div
                 key={candidateId}
                 onClick={() => !isVoting && handleCastVote(candidateId)}
                 className={`relative overflow-hidden bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl border-2 transition-all p-4 cursor-pointer select-none shadow-sm hover:shadow-md ${
-                  isMySelection
+                  isLeader
+                    ? 'border-[#D99A35] shadow-lg ring-1 ring-[#D99A35]/50'
+                    : isMySelection
                     ? 'border-[#7A241C] ring-2 ring-[#7A241C]/30 bg-[#FFF8EB]/50 dark:bg-[#1E120E]'
                     : 'border-[#E8DAC8] dark:border-[#42322B] hover:border-[#D99A35]'
                 }`}
@@ -279,7 +337,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
                 {/* Live Saffron Gold Percentage Bar */}
                 <div
                   className={`absolute top-0 bottom-0 left-0 transition-all duration-500 pointer-events-none ${
-                    isMySelection ? 'bg-[#D99A35]/20 dark:bg-[#D99A35]/15' : 'bg-[#E8DAC8]/30 dark:bg-[#34241D]/30'
+                    isLeader ? 'bg-[#D99A35]/25' : isMySelection ? 'bg-[#7A241C]/15' : 'bg-[#E8DAC8]/30 dark:bg-[#34241D]/30'
                   }`}
                   style={{ width: `${percentage}%` }}
                 />
@@ -299,6 +357,12 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
                         <h4 className="font-serif font-black text-lg text-[#30231E] dark:text-[#FFF8EB] leading-tight">
                           {restaurant.name}
                         </h4>
+                        {isLeader && (
+                          <span className="text-[10px] font-black uppercase text-[#D99A35] flex items-center gap-1 bg-[#1E110E] px-2 py-0.5 rounded-full border border-[#D99A35]/40 shadow-sm">
+                            <Crown className="w-3 h-3 text-[#D99A35]" />
+                            <span>Box Office Leader</span>
+                          </span>
+                        )}
                         {isMySelection && (
                           <span className="text-[10px] font-black uppercase text-[#7A241C] dark:text-[#D99A35] flex items-center gap-0.5">
                             <Check className="w-3.5 h-3.5" />
@@ -335,7 +399,7 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
                       onClick={(e) => e.stopPropagation()}
                       className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-[#7A241C] dark:text-[#D99A35] hover:underline font-semibold"
                     >
-                      <span>Map</span>
+                      <span>Take Me to Dum</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
@@ -349,17 +413,18 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
       {/* Live Participants Feed */}
       <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-5 sm:p-6 border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <h4 className="font-serif font-bold text-base text-[#30231E] dark:text-[#FFF8EB]">
-            Mehfil Attendance ({votes.length})
+          <h4 className="font-serif font-bold text-base text-[#30231E] dark:text-[#FFF8EB] flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-[#D99A35]" />
+            <span>Cast & Crew Verdict ({votes.length})</span>
           </h4>
           <span className="text-[#486447] dark:text-[#78A376] font-bold">
-            Live Subcollection Sync
+            Live Climax Feed
           </span>
         </div>
 
         {votes.length === 0 ? (
           <p className="text-xs text-[#8C766B] italic py-3 text-center">
-            No votes submitted yet. Share the invite code to start the feast decision!
+            Zero votes so far! Gang ni piluvu… biryani decision pending!
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
@@ -385,15 +450,15 @@ export const VotingRoomView: React.FC<VotingRoomViewProps> = ({
       {isHost && (
         <div className="p-4 rounded-2xl bg-[#30231E] text-[#FFF8EB] flex items-center justify-between gap-3 shadow-2xl border border-[#D99A35]/50">
           <div className="text-xs">
-            <span className="font-bold text-[#D99A35] block">Host Controls</span>
-            Ready to eat? Close voting to finalize the winning outlet for everyone.
+            <span className="font-bold text-[#D99A35] block">Director Call</span>
+            Interval ayipoyindi bhai… ready to declare the public verdict?
           </div>
           <button
             onClick={handleFinalizeVoting}
             disabled={isFinalizing}
             className="px-4 py-2.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs shrink-0 transition-colors shadow-md"
           >
-            {isFinalizing ? 'Closing...' : 'Close Voting'}
+            {isFinalizing ? 'Locking Verdict...' : 'Declare Verdict'}
           </button>
         </div>
       )}
