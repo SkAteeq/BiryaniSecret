@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all unmapped paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidRoom(data) {
+      return data.keys().hasAll(['id', 'title', 'hostId', 'hostName', 'candidateIds', 'status', 'createdAt', 'expiresAt'])
+        && data.keys().hasOnly(['id', 'title', 'hostId', 'hostName', 'candidateIds', 'status', 'createdAt', 'expiresAt', 'winnerId', 'winnerName', 'closedAt'])
+        && data.id is string && data.id.size() >= 3 && data.id.size() <= 32
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 100
+        && data.hostId is string && data.hostId.size() <= 128
+        && data.hostName is string && data.hostName.size() <= 60
+        && (data.status == 'voting' || data.status == 'closed')
+        && data.candidateIds is list && data.candidateIds.size() >= 1 && data.candidateIds.size() <= 10
+        && data.candidateIds[0] is string
+        && data.createdAt is timestamp
+        && data.expiresAt is timestamp
+        && (!('winnerId' in data) || (data.winnerId is string && data.winnerId.size() <= 64))
+        && (!('winnerName' in data) || (data.winnerName is string && data.winnerName.size() <= 100))
+        && (!('closedAt' in data) || (data.closedAt is timestamp));
+    }
+
+    function isValidVote(data) {
+      return data.keys().hasAll(['userId', 'userName', 'restaurantId', 'restaurantName', 'votedAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'userName', 'restaurantId', 'restaurantName', 'votedAt', 'updatedAt'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.userName is string && data.userName.size() <= 60
+        && data.restaurantId is string && data.restaurantId.size() <= 64
+        && data.restaurantName is string && data.restaurantName.size() <= 100
+        && data.votedAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Room collection
+    match /rooms/{roomId} {
+      // Room read is allowed by room ID lookup for participants
+      allow get: if isSignedIn() && isValidId(roomId);
+      allow list: if false; // Room enumeration scraping disabled
+
+      // Room creation
+      allow create: if isSignedIn()
+        && isValidId(roomId)
+        && incoming().id == roomId
+        && incoming().hostId == request.auth.uid
+        && incoming().status == 'voting'
+        && incoming().createdAt == request.time
+        && isValidRoom(incoming());
+
+      // Room status transitions & finalizing
+      allow update: if isSignedIn()
+        && isValidId(roomId)
+        && existing().hostId == request.auth.uid
+        && existing().status == 'voting'
+        && incoming().id == roomId
+        && incoming().hostId == existing().hostId
+        && incoming().createdAt == existing().createdAt
+        && incoming().candidateIds == existing().candidateIds
+        && isValidRoom(incoming())
+        && (
+          // Action: Close voting and finalize winner
+          (incoming().status == 'closed' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'winnerId', 'winnerName', 'closedAt']))
+        );
+
+      allow delete: if false;
+
+      // Votes subcollection
+      match /votes/{userId} {
+        // Participants can read individual votes and list room votes for real-time aggregate totals
+        allow get: if isSignedIn() && isValidId(roomId) && isValidId(userId);
+        allow list: if isSignedIn() && isValidId(roomId);
+
+        // Cast vote
+        allow create: if isSignedIn()
+          && isValidId(roomId)
+          && isValidId(userId)
+          && userId == request.auth.uid
+          && incoming().userId == request.auth.uid
+          && exists(/databases/$(database)/documents/rooms/$(roomId))
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'voting'
+          && request.time < get(/databases/$(database)/documents/rooms/$(roomId)).data.expiresAt
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.candidateIds.hasAny([incoming().restaurantId])
+          && incoming().votedAt == request.time
+          && incoming().updatedAt == request.time
+          && isValidVote(incoming());
+
+        // Update vote (change selection before room closes)
+        allow update: if isSignedIn()
+          && isValidId(roomId)
+          && isValidId(userId)
+          && userId == request.auth.uid
+          && existing().userId == request.auth.uid
+          && incoming().userId == request.auth.uid
+          && incoming().votedAt == existing().votedAt
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/rooms/$(roomId))
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'voting'
+          && request.time < get(/databases/$(database)/documents/rooms/$(roomId)).data.expiresAt
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.candidateIds.hasAny([incoming().restaurantId])
+          && incoming().diff(existing()).affectedKeys().hasOnly(['restaurantId', 'restaurantName', 'userName', 'updatedAt'])
+          && isValidVote(incoming());
+
+        allow delete: if false;
+      }
+    }
+  }
+}

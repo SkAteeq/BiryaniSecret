@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "Room": {
+      "title": "Room",
+      "description": "A group biryani decision room created by a host.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique room ID.",
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Session title or group name.",
+          "maxLength": 100
+        },
+        "hostId": {
+          "type": "string",
+          "description": "UID of the user who created the room.",
+          "maxLength": 128
+        },
+        "hostName": {
+          "type": "string",
+          "description": "Display name of the host.",
+          "maxLength": 60
+        },
+        "candidateIds": {
+          "type": "array",
+          "description": "List of candidate restaurant IDs selected for this vote.",
+          "maxLength": 10
+        },
+        "status": {
+          "type": "string",
+          "description": "Voting room lifecycle status.",
+          "enum": ["voting", "closed"]
+        },
+        "winnerId": {
+          "type": "string",
+          "description": "Restaurant ID of the winning candidate, or 'TIE' if tied.",
+          "maxLength": 64
+        },
+        "winnerName": {
+          "type": "string",
+          "description": "Name of the winning restaurant or tie summary.",
+          "maxLength": 100
+        },
+        "closedAt": {
+          "type": "string",
+          "description": "Timestamp when voting was closed."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp."
+        },
+        "expiresAt": {
+          "type": "string",
+          "description": "Expiration timestamp for room lifecycle."
+        }
+      },
+      "required": ["id", "title", "hostId", "hostName", "candidateIds", "status", "createdAt", "expiresAt"]
+    },
+    "Vote": {
+      "title": "Vote",
+      "description": "An individual participant's active vote inside a room.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Auth UID of the voter.",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "description": "Display name of the voter.",
+          "maxLength": 60
+        },
+        "restaurantId": {
+          "type": "string",
+          "description": "Restaurant ID voted for.",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "restaurantName": {
+          "type": "string",
+          "description": "Name of the restaurant voted for.",
+          "maxLength": 100
+        },
+        "votedAt": {
+          "type": "string",
+          "description": "Timestamp when vote was cast."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when vote was last updated."
+        }
+      },
+      "required": ["userId", "userName", "restaurantId", "restaurantName", "votedAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/rooms/{roomId}": {
+      "schema": {
+        "$ref": "Room"
+      },
+      "description": "Top-level voting room session documents."
+    },
+    "/rooms/{roomId}/votes/{userId}": {
+      "schema": {
+        "$ref": "Vote"
+      },
+      "description": "Subcollection storing each participant's single active vote in the room."
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Biryani Bandi",
+  "description": "Mobile-first web app for groups in Hyderabad to discover authentic biryani restaurants and decide where to eat via live voting.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
