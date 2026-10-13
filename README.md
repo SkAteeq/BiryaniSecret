@@ -40,6 +40,13 @@ A mobile-first responsive web application for groups in Hyderabad, Telangana, In
      - `VOTE_FAILED`: *"Vote traffic mein atak gaya! Malli try cheyyi."*
      - `SERVER_ERROR`: *"System ki dum kam pad gaya! Malli try cheyyi."*
 
+6. **Biryani Buddy — AI Foodie Chatbot**:
+   - Interactive Hyderabad foodie advisor accessible from the floating bottom-right launcher.
+   - Powered by Gemini 3.8 Flash on a secure server-side proxy route (`/api/chat`) with seamless local rule-based fallback.
+   - Calculates approximate straight-line distances using verified coordinates.
+   - Quick replies: "Find biryani near me", "Show hotels within 5 km", "Best budget options", "Compare nearby restaurants", "Help me choose a winner".
+   - Direct interactive recommendation cards with `[Directions]` and `[Add to Group Vote]` (with user confirmation).
+
 ---
 
 ## 📁 Architecture & Data Model

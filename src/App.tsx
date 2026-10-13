@@ -6,6 +6,7 @@ import { CreateRoomView } from './components/CreateRoomView';
 import { VotingRoomView } from './components/VotingRoomView';
 import { ResultsView } from './components/ResultsView';
 import { JoinRoomModal } from './components/JoinRoomModal';
+import { BiryaniBuddy } from './components/BiryaniBuddy';
 import { HyderabadErrorBanner } from './components/HyderabadErrorBanner';
 import { AppView, UserProfile, HyderabadError, Room } from './types';
 import { HYDERABAD_RESTAURANTS } from './data/restaurants';
@@ -289,6 +290,13 @@ export default function App() {
         isOpen={isJoinModalOpen}
         onClose={() => setIsJoinModalOpen(false)}
         onJoin={handleJoinRoom}
+      />
+
+      {/* Biryani Buddy AI Foodie Chatbot */}
+      <BiryaniBuddy
+        shortlistedIds={shortlistedIds}
+        onToggleShortlist={handleToggleShortlist}
+        onErrorPrompt={setCurrentError}
       />
 
       {/* Footer */}
