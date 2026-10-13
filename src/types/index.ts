@@ -51,6 +51,7 @@ export interface UserProfile {
   displayName: string;
   isAnonymous: boolean;
   email?: string | null;
+  photoURL?: string | null;
 }
 
 export type HyderabadErrorCode =

@@ -179,6 +179,20 @@ export const DIRTY_DOZEN_SECURITY_TESTS: SecurityTestCase[] = [
     payload: {
       candidateIds: ['shadab-charminar', 'bawarchi-rtcxroads', 'new-rigged-spot']
     }
+  },
+  {
+    id: 13,
+    name: 'Unauthenticated Vote Submission',
+    description: 'An unauthenticated visitor attempts to submit a vote document without logging in.',
+    expectedResult: 'PERMISSION_DENIED',
+    path: '/rooms/HYD-ROOM01/votes/unauth_anon',
+    authUid: null,
+    payload: {
+      userId: 'unauth_anon',
+      userName: 'Unauthenticated Hacker',
+      restaurantId: 'shadab-charminar',
+      restaurantName: 'Hotel Shadab'
+    }
   }
 ];
 

@@ -5,17 +5,21 @@ import { DiscoverView } from './components/DiscoverView';
 import { CreateRoomView } from './components/CreateRoomView';
 import { VotingRoomView } from './components/VotingRoomView';
 import { ResultsView } from './components/ResultsView';
-import { JoinRoomModal } from './components/JoinRoomModal';
+import { AuthModal } from './components/AuthModal';
 import { BiryaniBuddy } from './components/BiryaniBuddy';
 import { HyderabadErrorBanner } from './components/HyderabadErrorBanner';
 import { AppView, UserProfile, HyderabadError, Room } from './types';
 import { HYDERABAD_RESTAURANTS } from './data/restaurants';
 import {
-  ensureAuthenticatedUser,
+  checkExistingAuthSession,
   subscribeToAuthState,
   setStoredGuestName
 } from './firebase/authService';
-import { getRoom } from './firebase/roomService';
+import {
+  PUBLIC_SHOWDOWN_ROOM_ID,
+  ensurePublicShowdownRoom,
+  getRoom
+} from './firebase/roomService';
 import { testFirestoreConnection } from './firebase/config';
 import { createHyderabadError } from './utils/errors';
 
@@ -26,11 +30,18 @@ export default function App() {
     'shadab-charminar',
     'bawarchi-rtcxroads'
   ]);
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = useState<string>(PUBLIC_SHOWDOWN_ROOM_ID);
   const [activeRoomData, setActiveRoomData] = useState<Room | null>(null);
   const [currentError, setCurrentError] = useState<HyderabadError | null>(null);
-  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Auth Modal State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authReason, setAuthReason] = useState<string>('');
+  const [authSuccessCallback, setAuthSuccessCallback] = useState<(() => void) | null>(null);
+
+  // Biryani Buddy Controlled Open State
+  const [isBuddyOpen, setIsBuddyOpen] = useState(false);
 
   // Light / Dark Theme State
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -51,9 +62,6 @@ export default function App() {
       } catch {}
     } else {
       document.documentElement.classList.remove('dark');
-      try {
-        localStorage.setItem('biryani_bandi_theme', 'light');
-      } catch {}
     }
   }, [isDarkMode]);
 
@@ -61,39 +69,31 @@ export default function App() {
     setIsDarkMode((prev) => !prev);
   };
 
-  // Initialize auth and check URL params for room invite links
+  // Check for prior auth session without blocking or showing login wall
   useEffect(() => {
     let isMounted = true;
 
     async function initApp() {
       try {
         await testFirestoreConnection();
-        const currentUser = await ensureAuthenticatedUser();
-        if (isMounted) {
-          setUser(currentUser);
+        // Check if an existing session is already persisted in browser
+        const existing = await checkExistingAuthSession();
+        if (isMounted && existing) {
+          setUser(existing);
         }
       } catch (err: any) {
-        console.warn('Initial session setup warning:', err);
-        if (err.message === 'ANONYMOUS_AUTH_DISABLED') {
-          setCurrentError(createHyderabadError('ANONYMOUS_AUTH_DISABLED'));
-        }
+        console.warn('Initial session check note:', err);
       } finally {
         if (isMounted) {
           setIsInitializing(false);
         }
-      }
-
-      const params = new URLSearchParams(window.location.search);
-      const urlRoom = params.get('room');
-      if (urlRoom && isMounted) {
-        handleJoinRoom(urlRoom.trim().toUpperCase());
       }
     }
 
     initApp();
 
     const unsubscribeAuth = subscribeToAuthState((updatedUser) => {
-      if (isMounted && updatedUser) {
+      if (isMounted) {
         setUser(updatedUser);
       }
     });
@@ -139,37 +139,41 @@ export default function App() {
     setUser((prev) => (prev ? { ...prev, displayName: name } : null));
   }, []);
 
-  const handleJoinRoom = useCallback(async (roomCode: string) => {
-    const sanitized = roomCode.trim().toUpperCase();
-    if (!sanitized) return;
+  const handleRequireAuth = useCallback((reason: string, onAuthenticated?: () => void) => {
+    setAuthReason(reason);
+    setAuthSuccessCallback(() => onAuthenticated || null);
+    setIsAuthModalOpen(true);
+  }, []);
 
+  const handleAuthSuccess = (authenticatedUser: UserProfile) => {
+    setUser(authenticatedUser);
+    if (authSuccessCallback) {
+      authSuccessCallback();
+      setAuthSuccessCallback(null);
+    }
+  };
+
+  const handleChangePoll = useCallback(async (pollId: string) => {
+    setActiveRoomId(pollId);
     try {
-      const room = await getRoom(sanitized);
-      if (!room) {
-        setCurrentError(createHyderabadError('ROOM_NOT_FOUND', `Room ${sanitized} does not exist.`));
-        return;
+      const room = await getRoom(pollId);
+      if (room) {
+        setActiveRoomData(room);
+        if (room.status === 'closed') {
+          setCurrentView('results');
+          return;
+        }
       }
-
-      const url = new URL(window.location.href);
-      url.searchParams.set('room', sanitized);
-      window.history.pushState({}, '', url.toString());
-
-      setActiveRoomId(room.id);
-      setActiveRoomData(room);
-
-      if (room.status === 'closed') {
-        setCurrentView('results');
-      } else {
-        setCurrentView('room');
-      }
-    } catch (err: any) {
-      setCurrentError(createHyderabadError('SERVER_ERROR', err.message));
+      setCurrentView('room');
+    } catch {
+      setCurrentView('room');
     }
   }, []);
 
   const handleRoomCreated = useCallback((roomId: string) => {
-    handleJoinRoom(roomId);
-  }, [handleJoinRoom]);
+    setActiveRoomId(roomId);
+    setCurrentView('room');
+  }, []);
 
   const handleViewResults = useCallback((room: Room) => {
     setActiveRoomData(room);
@@ -177,11 +181,7 @@ export default function App() {
   }, []);
 
   const handleStartNewVote = useCallback(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('room');
-    window.history.pushState({}, '', url.toString());
-
-    setActiveRoomId(null);
+    setActiveRoomId(PUBLIC_SHOWDOWN_ROOM_ID);
     setActiveRoomData(null);
     setCurrentView('create-room');
   }, []);
@@ -195,6 +195,9 @@ export default function App() {
     } else if (actionType === 'increase_radius') {
       setCurrentView('discover');
       setCurrentError(null);
+    } else if (actionType === 'login') {
+      setIsAuthModalOpen(true);
+      setCurrentError(null);
     }
   };
 
@@ -204,17 +207,15 @@ export default function App() {
       <Navbar
         currentView={currentView}
         onNavigate={(view) => {
-          if (view === 'home' || view === 'discover' || view === 'create-room') {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('room');
-            window.history.pushState({}, '', url.toString());
-            setActiveRoomId(null);
-          }
           setCurrentView(view);
         }}
         user={user}
         onUserUpdated={handleUserUpdated}
-        onOpenJoinModal={() => setIsJoinModalOpen(true)}
+        onOpenAuthModal={() => {
+          setAuthReason('Choose how you want to participate in Biryani Bandi:');
+          setAuthSuccessCallback(null);
+          setIsAuthModalOpen(true);
+        }}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
       />
@@ -240,7 +241,8 @@ export default function App() {
             {currentView === 'home' && (
               <HomeHero
                 onNavigate={setCurrentView}
-                onJoinWithCode={handleJoinRoom}
+                onOpenBiryaniBuddy={() => setIsBuddyOpen(true)}
+                onFindNearMe={() => setCurrentView('discover')}
                 candidateCount={HYDERABAD_RESTAURANTS.length}
               />
             )}
@@ -262,15 +264,19 @@ export default function App() {
                 user={user}
                 onRoomCreated={handleRoomCreated}
                 onErrorPrompt={setCurrentError}
+                onRequireAuth={handleRequireAuth}
               />
             )}
 
-            {currentView === 'room' && activeRoomId && (
+            {currentView === 'room' && (
               <VotingRoomView
                 roomId={activeRoomId}
                 user={user}
                 onViewResults={handleViewResults}
                 onErrorPrompt={setCurrentError}
+                onRequireAuth={handleRequireAuth}
+                onChangePoll={handleChangePoll}
+                onCreateNewPoll={() => setCurrentView('create-room')}
               />
             )}
 
@@ -285,11 +291,12 @@ export default function App() {
         )}
       </main>
 
-      {/* Join Room Modal */}
-      <JoinRoomModal
-        isOpen={isJoinModalOpen}
-        onClose={() => setIsJoinModalOpen(false)}
-        onJoin={handleJoinRoom}
+      {/* Optional Auth Modal (Google or Guest) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+        actionReason={authReason}
       />
 
       {/* Biryani Buddy AI Foodie Chatbot */}
@@ -297,13 +304,15 @@ export default function App() {
         shortlistedIds={shortlistedIds}
         onToggleShortlist={handleToggleShortlist}
         onErrorPrompt={setCurrentError}
+        isOpenControlled={isBuddyOpen}
+        onOpenControlledChange={setIsBuddyOpen}
       />
 
       {/* Footer */}
       <footer className="border-t border-[#E8DAC8]/80 dark:border-[#42322B] py-6 text-center text-xs text-[#6B544B] dark:text-[#D1C0B4] bg-[#FFFFFF]/60 dark:bg-[#1E1410]/60">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
-            <strong className="text-[#7A241C] dark:text-[#D99A35]">Biryani Bandi</strong> — Authentic Hyderabadi Dining Consensus.
+            <strong className="text-[#7A241C] dark:text-[#D99A35]">Biryani Bandi</strong> — No login drama, authentic Hyderabadi dining consensus.
           </div>
           <div className="text-[#8C766B] flex items-center gap-1.5 flex-wrap justify-center">
             <span>Charminar</span>

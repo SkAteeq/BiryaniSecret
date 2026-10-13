@@ -36,17 +36,45 @@ export function generateHyderabadNickname(): string {
   return `${t} ${n}`;
 }
 
-export async function ensureAuthenticatedUser(requestedName?: string): Promise<UserProfile> {
+/**
+ * Maps a Firebase User object to the application UserProfile.
+ */
+function mapFirebaseUser(user: User, fallbackName?: string): UserProfile {
+  return {
+    uid: user.uid,
+    displayName: user.displayName || fallbackName || (user.isAnonymous ? 'Guest Foodie' : 'Biryani Fan'),
+    isAnonymous: user.isAnonymous,
+    email: user.email,
+    photoURL: user.photoURL || null
+  };
+}
+
+/**
+ * Checks if a persisted user session already exists from a prior session.
+ * Does NOT force login if no user is signed in.
+ */
+export async function checkExistingAuthSession(): Promise<UserProfile | null> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    return null;
+  }
+  const stored = getStoredGuestName();
+  return mapFirebaseUser(currentUser, stored);
+}
+
+/**
+ * Explicitly signs in as an anonymous guest.
+ * Preserves guest identity across reloads and reconnections.
+ */
+export async function signInAsGuest(customName?: string): Promise<UserProfile> {
   let currentUser = auth.currentUser;
 
   if (!currentUser) {
     try {
-      // Try anonymous authentication first for frictionless guest entry
       const cred = await signInAnonymously(auth);
       currentUser = cred.user;
-    } catch (anonError) {
-      console.warn('Anonymous auth failed or disabled, falling back to popup sign-in:', anonError);
-      // If anonymous auth is disabled on Firebase project, re-throw with actionable code
+    } catch (anonError: any) {
+      console.warn('Anonymous auth failed:', anonError);
       const msg = anonError instanceof Error ? anonError.message : String(anonError);
       if (msg.includes('admin-restricted-operation') || msg.includes('operation-not-allowed')) {
         throw new Error('ANONYMOUS_AUTH_DISABLED');
@@ -55,9 +83,9 @@ export async function ensureAuthenticatedUser(requestedName?: string): Promise<U
     }
   }
 
-  const nameToUse = (requestedName && requestedName.trim()) 
-    || currentUser.displayName 
-    || getStoredGuestName() 
+  const nameToUse = (customName && customName.trim())
+    || currentUser.displayName
+    || getStoredGuestName()
     || generateHyderabadNickname();
 
   if (nameToUse && (!currentUser.displayName || currentUser.displayName !== nameToUse)) {
@@ -72,12 +100,42 @@ export async function ensureAuthenticatedUser(requestedName?: string): Promise<U
   return mapFirebaseUser(currentUser, nameToUse);
 }
 
+/**
+ * Ensures an authenticated user exists (used when casting a vote or launching a vote).
+ * Prefers existing session, otherwise creates an anonymous guest session.
+ */
+export async function ensureAuthenticatedUser(requestedName?: string): Promise<UserProfile> {
+  if (auth.currentUser) {
+    return mapFirebaseUser(auth.currentUser, requestedName);
+  }
+  return signInAsGuest(requestedName);
+}
+
+/**
+ * Signs in using Google Authentication.
+ * Handles popup cancellation and returns user with Google profile name and photo.
+ */
 export async function signInWithGoogle(): Promise<UserProfile> {
   const provider = new GoogleAuthProvider();
-  const cred = await signInWithPopup(auth, provider);
-  const name = cred.user.displayName || getStoredGuestName() || 'Biryani Fan';
-  setStoredGuestName(name);
-  return mapFirebaseUser(cred.user, name);
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    const name = cred.user.displayName || 'Biryani Foodie';
+    setStoredGuestName(name);
+    return mapFirebaseUser(cred.user, name);
+  } catch (error: any) {
+    // Handle user cancellation gracefully
+    if (
+      error.code === 'auth/popup-closed-by-user' ||
+      error.code === 'auth/cancelled-popup-request'
+    ) {
+      const cancelledErr = new Error('Sign-in cancelled by user');
+      (cancelledErr as any).code = 'SIGN_IN_CANCELLED';
+      throw cancelledErr;
+    }
+    throw error;
+  }
 }
 
 export async function signOutUser(): Promise<void> {
@@ -93,13 +151,4 @@ export function subscribeToAuthState(callback: (user: UserProfile | null) => voi
       callback(null);
     }
   });
-}
-
-function mapFirebaseUser(user: User, fallbackName?: string): UserProfile {
-  return {
-    uid: user.uid,
-    displayName: user.displayName || fallbackName || 'Biryani Guest',
-    isAnonymous: user.isAnonymous,
-    email: user.email
-  };
 }

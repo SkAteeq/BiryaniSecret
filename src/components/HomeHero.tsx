@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, Users, Sparkles, MapPin, CheckCircle2, ArrowRight, Film } from 'lucide-react';
+import { Compass, Users, Sparkles, MapPin, CheckCircle2, Film, MessageSquare, Flame } from 'lucide-react';
 import { AppView } from '../types';
 import { CulinaryArtwork } from './CulinaryArtwork';
 import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
 
 interface HomeHeroProps {
   onNavigate: (view: AppView) => void;
-  onJoinWithCode: (code: string) => void;
+  onOpenBiryaniBuddy: () => void;
+  onFindNearMe: () => void;
   candidateCount: number;
 }
 
 export const HomeHero: React.FC<HomeHeroProps> = ({
   onNavigate,
-  onJoinWithCode,
+  onOpenBiryaniBuddy,
+  onFindNearMe,
   candidateCount
 }) => {
-  const [roomCodeInput, setRoomCodeInput] = useState('');
   const [taglineIndex, setTaglineIndex] = useState(0);
 
   // Rotating original cinematic taglines
@@ -27,13 +28,6 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const handleQuickJoin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (roomCodeInput.trim()) {
-      onJoinWithCode(roomCodeInput.trim().toUpperCase());
-    }
-  };
-
   const currentTagline = CINEMA_DIALOGUES.homeTaglines[taglineIndex];
 
   return (
@@ -41,8 +35,8 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       {/* Hero Showcase Card */}
       <div className="relative overflow-hidden rounded-3xl bg-[#2A1C16] text-[#FFF8EB] border border-[#D99A35]/40 shadow-2xl">
         <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch">
-          {/* Left Column: Hero Entry & Cinematic Tagline */}
-          <div className="lg:col-span-6 p-6 sm:p-10 flex flex-col justify-between space-y-6">
+          {/* Left Column: Hero Entry & 4 Core Action CTAs */}
+          <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
             <div>
               {/* Rotating Punchline Header */}
               <div
@@ -56,7 +50,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
                 <span className="truncate italic">"{currentTagline}"</span>
               </div>
 
-              <h1 className="font-serif text-3xl sm:text-5xl font-black text-[#FFF8EB] leading-[1.12] tracking-tight text-balance">
+              <h1 className="font-serif text-3xl sm:text-5xl font-black text-[#FFF8EB] leading-[1.14] tracking-tight text-balance">
                 Stop arguing. <br />
                 <span className="text-[#D99A35]">
                   Let the vote decide
@@ -65,64 +59,70 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               </h1>
 
               <p className="mt-4 text-sm sm:text-base text-[#FFF8EB]/80 leading-relaxed font-sans">
-                Oka city. Enno biryanis. Final decision meedhe! Shortlist verified Hyderabad outlets, launch a live voting room, and crown the people's champion before lunch hour strikes.
+                Oka city. Enno biryanis. Final decision meedhe! Curated verified Hyderabad outlets, instant public consensus voting, and zero login roadblocks.
               </p>
 
-              {/* Action Buttons: Primary & Secondary Cinema CTAs */}
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              {/* Friendly Microcopy Badge */}
+              <div className="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1C120E]/90 border border-[#D99A35]/30 text-xs text-[#D99A35] font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-[#D99A35] shrink-0" />
+                <span>No login drama, bhai. Seedha biryani pe aao!</span>
+              </div>
+
+              {/* 4 Primary Action Buttons Required */}
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 1. Find Biryani Near Me */}
                 <button
-                  onClick={() => onNavigate('create-room')}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] active:scale-98 text-[#FFF8EB] font-bold text-sm transition-all shadow-lg shadow-[#7A241C]/20"
+                  onClick={onFindNearMe}
+                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] active:scale-98 text-[#FFF8EB] font-bold text-sm transition-all shadow-lg shadow-[#7A241C]/25"
                 >
-                  <Users className="w-4 h-4 text-[#D99A35]" />
-                  <span>{CINEMA_DIALOGUES.ctaPrimary}</span>
+                  <MapPin className="w-4 h-4 text-[#D99A35]" />
+                  <span>Find Biryani Near Me</span>
                 </button>
 
+                {/* 2. Browse Restaurants */}
                 <button
                   onClick={() => onNavigate('discover')}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#3D2921] hover:bg-[#4E352B] border border-[#D99A35]/40 text-[#FFF8EB] font-semibold text-sm transition-all"
+                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-[#3D2921] hover:bg-[#4E352B] border border-[#D99A35]/40 text-[#FFF8EB] font-semibold text-sm transition-all"
                 >
                   <Compass className="w-4 h-4 text-[#D99A35]" />
-                  <span>{CINEMA_DIALOGUES.ctaSecondary}</span>
+                  <span>Browse Restaurants</span>
+                </button>
+
+                {/* 3. Biryani Buddy */}
+                <button
+                  onClick={onOpenBiryaniBuddy}
+                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-[#2A1D17] hover:bg-[#3D2921] border border-[#D99A35]/30 text-[#FFF8EB] font-semibold text-sm transition-all"
+                >
+                  <MessageSquare className="w-4 h-4 text-[#D99A35]" />
+                  <span>Biryani Buddy</span>
+                </button>
+
+                {/* 4. Start Voting */}
+                <button
+                  onClick={() => onNavigate('room')}
+                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-gradient-to-r from-[#D99A35] to-[#B37A20] hover:from-[#E3AA45] hover:to-[#C28525] text-[#1E110E] font-black text-sm transition-all shadow-md active:scale-98"
+                >
+                  <Users className="w-4 h-4 text-[#1E110E]" />
+                  <span>Start Voting</span>
                 </button>
               </div>
             </div>
 
-            {/* Quick Join With Code Form */}
-            <div className="pt-6 border-t border-[#4E352B]/60 max-w-md">
-              <p className="text-xs font-semibold text-[#D99A35] mb-2 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#D99A35]" />
-                <span>Have an invitation scene code from your gang?</span>
-              </p>
-              <form onSubmit={handleQuickJoin} className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. HYD-7X9B"
-                  value={roomCodeInput}
-                  onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
-                  maxLength={12}
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#1C120E] border border-[#D99A35]/40 text-[#FFF8EB] placeholder:text-[#8C766B] text-sm font-mono tracking-widest focus:outline-none focus:border-[#D99A35]"
-                />
-                <button
-                  type="submit"
-                  disabled={!roomCodeInput.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-[#7A241C] disabled:opacity-40 hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm"
-                >
-                  <span>Join Scene</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </form>
+            {/* Microcopy Footer */}
+            <div className="pt-4 border-t border-[#4E352B]/60 flex items-center justify-between text-xs text-[#FFF8EB]/70">
+              <span className="italic">Guest ga, Google tho ga — biryani hunt start cheyyi!</span>
+              <span className="text-[#D99A35] font-semibold">{candidateCount} Verified Outlets</span>
             </div>
           </div>
 
           {/* Right Column: Hero Biryani Culinary Artwork */}
-          <div className="lg:col-span-6 relative bg-[#18110D] flex items-center justify-center p-4 sm:p-6 overflow-hidden min-h-[300px] sm:min-h-[420px]">
-            <div className="w-full h-full max-w-[620px] max-h-[360px] flex items-center justify-center transition-transform hover:scale-102 duration-500">
+          <div className="lg:col-span-5 relative bg-[#18110D] flex items-center justify-center p-4 sm:p-6 overflow-hidden min-h-[280px] sm:min-h-[380px]">
+            <div className="w-full h-full max-w-[540px] max-h-[340px] flex items-center justify-center transition-transform hover:scale-102 duration-500">
               <CulinaryArtwork type="hero" className="w-full h-full object-contain filter drop-shadow-2xl" />
             </div>
 
             <div className="absolute bottom-3 right-4 text-[11px] text-[#D99A35]/90 font-serif italic bg-[#18110D]/85 px-2.5 py-1 rounded backdrop-blur-sm border border-[#D99A35]/20">
-              Mass Biryani Hero Entry in Hand-Hammered Brass Deg
+              Mass Biryani Entry in Hand-Hammered Brass Deg
             </div>
           </div>
         </div>
@@ -147,10 +147,10 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
             <Users className="w-5 h-5 text-[#D99A35]" />
           </div>
           <h2 className="font-serif font-bold text-base text-[#30231E] dark:text-[#FFF8EB]">
-            Real-Time Public Verdict
+            Open Public Consensus
           </h2>
           <p className="mt-1 text-xs text-[#6B544B] dark:text-[#D1C0B4] leading-relaxed">
-            Live subcollection sync across phones. Mana gang, mana vote, mana biryani. Changeable till the climax cut!
+            No invitation links needed. Join the active Hyderabad city showdown or community polls with 1 tap.
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
             Nearest Hero Calculation
           </h2>
           <p className="mt-1 text-xs text-[#6B544B] dark:text-[#D1C0B4] leading-relaxed">
-            2 km, 5 km, 10 km straight-line radius calculation, plus 1-tap "Take Me to the Dum" Google Maps navigation.
+            Straight-line distance calculation, plus 1-tap "Take Me to the Dum" Google Maps navigation.
           </p>
         </div>
       </div>

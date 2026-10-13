@@ -14,12 +14,41 @@ import { Room, Vote } from '../types';
 import { handleFirestoreError, OperationType } from './errorHandler';
 import { getRestaurantById } from '../data/restaurants';
 
+export const PUBLIC_SHOWDOWN_ROOM_ID = 'hyd-city-showdown';
+
+export interface CommunityPollPreset {
+  id: string;
+  title: string;
+  description: string;
+  candidateIds: string[];
+}
+
+export const COMMUNITY_POLLS: CommunityPollPreset[] = [
+  {
+    id: 'hyd-city-showdown',
+    title: "Today's Hyderabad City Showdown",
+    description: "The city's top contenders in a live open public poll.",
+    candidateIds: ['shadab-charminar', 'bawarchi-rtcxroads', 'shah-ghouse-gachibowli', 'cafe-bahar-hyderguda', 'naidu-gari-kunda-manikonda']
+  },
+  {
+    id: 'old-city-mutton-clash',
+    title: "Old City Mutton Heritage Clash",
+    description: "Charminar and Khilwat authentic slow-dum legends.",
+    candidateIds: ['shadab-charminar', 'rumaan-khilwat', 'cafe-bahar-hyderguda']
+  },
+  {
+    id: 'midnight-biryani-raid',
+    title: "Midnight Biryani Craving Raid",
+    description: "Late-night open contenders battling for after-hours hunger.",
+    candidateIds: ['shadab-charminar', 'shah-ghouse-gachibowli', 'pr-biryani-habsiguda']
+  }
+];
+
 /**
- * Generates a high-entropy, human-friendly room code (e.g. "HYD-7X8M").
- * Uses crypto.getRandomValues for cryptographic randomness.
+ * Generates an internal unique session ID (no invitations needed).
  */
 export function generateRoomCode(): string {
-  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Exclude ambiguous 0,1,I,O
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   const array = new Uint8Array(5);
   crypto.getRandomValues(array);
   let code = '';
@@ -34,6 +63,63 @@ export interface CreateRoomInput {
   hostName: string;
   candidateIds: string[];
   durationMinutes?: number;
+}
+
+/**
+ * Ensures the shared public showdown session exists in Firestore.
+ */
+export async function ensurePublicShowdownRoom(roomId: string = PUBLIC_SHOWDOWN_ROOM_ID): Promise<Room> {
+  const sanitizedId = roomId.trim();
+  const roomPath = `rooms/${sanitizedId}`;
+
+  const preset = COMMUNITY_POLLS.find((p) => p.id === sanitizedId) || COMMUNITY_POLLS[0];
+
+  try {
+    const snap = await getDoc(doc(db, 'rooms', sanitizedId));
+    if (snap.exists()) {
+      return formatRoomSnapshot(snap.data(), sanitizedId);
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days active public poll
+
+    const roomData = {
+      id: sanitizedId,
+      title: preset.title,
+      hostId: auth.currentUser?.uid || 'biryani-bandi-public',
+      hostName: 'Public Community Poll',
+      candidateIds: preset.candidateIds,
+      status: 'voting' as const,
+      createdAt: serverTimestamp(),
+      expiresAt: Timestamp.fromDate(expiresAt)
+    };
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'rooms', sanitizedId), roomData);
+    }
+
+    return {
+      id: sanitizedId,
+      title: preset.title,
+      hostId: roomData.hostId,
+      hostName: roomData.hostName,
+      candidateIds: preset.candidateIds,
+      status: 'voting',
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString()
+    };
+  } catch (error) {
+    return {
+      id: sanitizedId,
+      title: preset.title,
+      hostId: 'biryani-bandi-public',
+      hostName: 'Public Community Poll',
+      candidateIds: preset.candidateIds,
+      status: 'voting',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 86400000).toISOString()
+    };
+  }
 }
 
 /**

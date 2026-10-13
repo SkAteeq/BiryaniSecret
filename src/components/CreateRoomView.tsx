@@ -4,15 +4,14 @@ import {
   Check,
   Plus,
   Trash2,
-  Copy,
-  CheckCheck,
-  Share2,
   ArrowRight,
-  Flame
+  Flame,
+  CheckCircle2
 } from 'lucide-react';
 import { UserProfile, HyderabadError } from '../types';
 import { HYDERABAD_RESTAURANTS } from '../data/restaurants';
 import { createRoom } from '../firebase/roomService';
+import { ensureAuthenticatedUser } from '../firebase/authService';
 import { createHyderabadError } from '../utils/errors';
 import { CulinaryArtwork } from './CulinaryArtwork';
 import { CINEMA_DIALOGUES } from '../config/cinemaDialogues';
@@ -24,6 +23,7 @@ interface CreateRoomViewProps {
   user: UserProfile | null;
   onRoomCreated: (roomId: string) => void;
   onErrorPrompt: (error: HyderabadError) => void;
+  onRequireAuth: (reason: string, onAuthenticated?: () => void) => void;
 }
 
 export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
@@ -32,15 +32,14 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
   onClearShortlist,
   user,
   onRoomCreated,
-  onErrorPrompt
+  onErrorPrompt,
+  onRequireAuth
 }) => {
-  const [title, setTitle] = useState('Friday Afternoon Biryani Raid');
+  const [title, setTitle] = useState('Weekend Biryani Showdown');
   const [hostName, setHostName] = useState(user?.displayName || 'Bhaijaan');
-  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [durationMinutes, setDurationMinutes] = useState(1440); // 24 hours default
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +48,7 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
       onErrorPrompt(
         createHyderabadError(
           'SERVER_ERROR',
-          'Please select at least 2 candidate restaurants for your group to vote on.'
+          'Please select at least 2 candidate restaurants for the voting poll.'
         )
       );
       return;
@@ -59,17 +58,30 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
       onErrorPrompt(
         createHyderabadError(
           'SERVER_ERROR',
-          'Maximum 10 restaurants allowed per voting room.'
+          'Maximum 10 restaurants allowed per voting poll.'
         )
       );
       return;
+    }
+
+    // If not authenticated, authenticate as guest or trigger auth
+    let activeUser = user;
+    if (!activeUser) {
+      try {
+        activeUser = await ensureAuthenticatedUser(hostName);
+      } catch (authErr: any) {
+        onRequireAuth('Sign in or continue as Guest to publish a voting poll:', async () => {
+          // Re-trigger
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
       const room = await createRoom({
         title,
-        hostName,
+        hostName: hostName || activeUser?.displayName || 'Bhaijaan',
         candidateIds: shortlistedIds,
         durationMinutes
       });
@@ -81,51 +93,10 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
     }
   };
 
-  const getInviteUrl = (roomId: string) => {
-    const origin = window.location.origin;
-    const path = window.location.pathname;
-    return `${origin}${path}?room=${roomId}`;
-  };
-
-  const handleCopyLink = () => {
-    if (!createdRoomId) return;
-    const url = getInviteUrl(createdRoomId);
-    navigator.clipboard.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
-  const handleCopyCode = () => {
-    if (!createdRoomId) return;
-    navigator.clipboard.writeText(createdRoomId);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2500);
-  };
-
-  const handleShare = async () => {
-    if (!createdRoomId) return;
-    const url = getInviteUrl(createdRoomId);
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Vote for Biryani: ${title}`,
-          text: `Cast your vote for Biryani Bandi room ${createdRoomId}!`,
-          url
-        });
-      } catch {
-        // Share dismissed
-      }
-    } else {
-      handleCopyLink();
-    }
-  };
-
   if (createdRoomId) {
-    const inviteUrl = getInviteUrl(createdRoomId);
-
     return (
       <div className="max-w-xl mx-auto py-6 space-y-6">
-        <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-6 sm:p-8 border border-[#D99A35] shadow-2xl text-center space-y-5">
+        <div className="bg-[#FFFFFF] dark:bg-[#251B17] rounded-3xl p-6 sm:p-8 border-2 border-[#D99A35] shadow-2xl text-center space-y-5">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-[#FFF8EB] dark:bg-[#34241D] text-[#7A241C] flex items-center justify-center shadow-inner border border-[#D99A35]/30">
             <Flame className="w-8 h-8 text-[#D99A35]" />
           </div>
@@ -135,61 +106,21 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
               {CINEMA_DIALOGUES.voting.roomCreated}
             </div>
             <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB] mt-1">
-              Scene Set, Mehfil Ready!
+              Scene Set, Poll Live!
             </h2>
-            <p className="text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4] mt-1">
-              {CINEMA_DIALOGUES.voting.shareRoom}
+            <p className="text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4] mt-1 max-w-sm mx-auto">
+              Your public community voting poll has been published to Biryani Bandi. Anyone can now cast their vote directly with zero invitations required.
             </p>
           </div>
 
-          {/* Room Code Showcase */}
-          <div className="bg-[#FFF8EB] dark:bg-[#1A120F] border-2 border-dashed border-[#D99A35] rounded-2xl p-5 space-y-2">
-            <div className="text-xs text-[#8C766B] font-bold uppercase tracking-wider">
-              Copyable Room Code
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <span className="font-mono text-3xl sm:text-4xl font-black text-[#7A241C] dark:text-[#D99A35] tracking-widest">
-                {createdRoomId}
-              </span>
-              <button
-                onClick={handleCopyCode}
-                className="p-2.5 rounded-xl bg-[#D99A35] hover:bg-[#FAD782] text-[#1E110E] transition-colors"
-                title="Copy Code"
-              >
-                {copiedCode ? <CheckCheck className="w-5 h-5 text-[#486447]" /> : <Copy className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Share Links */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#FFF8EB] dark:bg-[#1A120F] text-[#30231E] dark:text-[#FFF8EB] text-xs truncate border border-[#E8DAC8] dark:border-[#42322B]">
-              <span className="truncate flex-1 text-left font-mono">{inviteUrl}</span>
-              <button
-                onClick={handleCopyLink}
-                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] dark:bg-[#251B17] text-[#30231E] dark:text-[#FFF8EB] font-bold border border-[#E8DAC8] dark:border-[#42322B] shrink-0 hover:bg-[#F2E5D0]"
-              >
-                {copiedLink ? 'Copied!' : 'Copy Link'}
-              </button>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleShare}
-                className="flex-1 py-3.5 rounded-xl bg-[#3D2921] hover:bg-[#4E352B] text-[#FFF8EB] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors border border-[#D99A35]/30"
-              >
-                <Share2 className="w-4 h-4 text-[#D99A35]" />
-                <span>Share with Friends</span>
-              </button>
-
-              <button
-                onClick={() => onRoomCreated(createdRoomId)}
-                className="flex-1 py-3.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-lg"
-              >
-                <span>Enter Room Now</span>
-                <ArrowRight className="w-4 h-4 text-[#D99A35]" />
-              </button>
-            </div>
+          <div className="pt-2">
+            <button
+              onClick={() => onRoomCreated(createdRoomId)}
+              className="w-full py-4 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-xl active:scale-98"
+            >
+              <span>Enter Live Voting Poll Now</span>
+              <ArrowRight className="w-4 h-4 text-[#D99A35]" />
+            </button>
           </div>
         </div>
       </div>
@@ -200,11 +131,14 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
     <div className="max-w-3xl mx-auto space-y-6 pb-20">
       <div className="bg-[#FFFFFF] dark:bg-[#251B17] p-6 sm:p-8 rounded-3xl border border-[#E8DAC8] dark:border-[#42322B] shadow-sm space-y-6">
         <div>
+          <div className="text-xs font-bold uppercase tracking-wider text-[#D99A35]">
+            No Invitations Needed
+          </div>
           <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#30231E] dark:text-[#FFF8EB]">
-            Create a Biryani Room
+            Create a Community Biryani Poll
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-[#6B544B] dark:text-[#D1C0B4]">
-            Pick 2 to 10 contender restaurants and give your friends a vote.
+            Shortlist 2 to 10 contender restaurants and launch an open public vote.
           </p>
         </div>
 
@@ -212,13 +146,13 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
           {/* Room Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
-              Room Title / Occasion
+              Poll Title / Theme
             </label>
             <input
               type="text"
               required
               maxLength={100}
-              placeholder="e.g. Friday Lunch Biryani Raid"
+              placeholder="e.g. Weekend Biryani Showdown"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/50 dark:bg-[#1A120F] focus:bg-white dark:focus:bg-[#201612] focus:outline-none focus:border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB] text-sm font-medium"
@@ -229,7 +163,7 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
-                Your Host Nickname
+                Creator Nickname
               </label>
               <input
                 type="text"
@@ -251,23 +185,23 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 className="w-full px-4 py-3 rounded-xl border border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/50 dark:bg-[#1A120F] focus:bg-white dark:focus:bg-[#201612] focus:outline-none focus:border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB] text-sm font-medium"
               >
-                <option value={30}>30 minutes (Quick lunch decision)</option>
-                <option value={60}>1 hour (Standard plan)</option>
-                <option value={180}>3 hours (Evening dinner)</option>
-                <option value={1440}>24 hours (Weekend raid)</option>
+                <option value={60}>1 Hour (Quick Lunch Decision)</option>
+                <option value={180}>3 Hours (Dinner Planning)</option>
+                <option value={1440}>24 Hours (Full Day Poll)</option>
+                <option value={10080}>7 Days (Weekly Showdown)</option>
               </select>
             </div>
           </div>
 
-          {/* Candidate Selection Section */}
-          <div className="space-y-3 pt-2 border-t border-[#E8DAC8]/60 dark:border-[#42322B]/60">
+          {/* Shortlisted Ballot Section */}
+          <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
-                  Select Candidates ({shortlistedIds.length}/10 selected)
-                </div>
-                <p className="text-[11px] text-[#8C766B] dark:text-[#A39287]">
-                  Minimum 2 contenders required for a group vote.
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#30231E] dark:text-[#FFF8EB]">
+                  Selected Contenders ({shortlistedIds.length}/10)
+                </h3>
+                <p className="text-[11px] text-[#8C766B]">
+                  Minimum 2 required to create a ballot
                 </p>
               </div>
 
@@ -275,45 +209,44 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
                 <button
                   type="button"
                   onClick={onClearShortlist}
-                  className="text-xs text-[#7A241C] hover:underline flex items-center gap-1 font-semibold"
+                  className="text-xs font-semibold text-[#7A241C] dark:text-[#D99A35] hover:underline flex items-center gap-1"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-3.5 h-3.5" />
                   <span>Clear All</span>
                 </button>
               )}
             </div>
 
-            {/* Quick Pick Contender Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+            {/* Quick Candidate Picker List */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
               {HYDERABAD_RESTAURANTS.map((restaurant) => {
                 const isSelected = shortlistedIds.includes(restaurant.id);
-
                 return (
                   <button
-                    type="button"
                     key={restaurant.id}
+                    type="button"
                     onClick={() => onToggleShortlist(restaurant.id)}
-                    className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 ${
+                    className={`p-3 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors ${
                       isSelected
-                        ? 'border-[#7A241C] bg-[#FFF8EB] dark:bg-[#1C120E] ring-1 ring-[#7A241C] text-[#30231E] dark:text-[#FFF8EB]'
-                        : 'border-[#E8DAC8] dark:border-[#42322B] bg-[#FFF8EB]/30 dark:bg-[#1A120F] hover:bg-[#F2E5D0] dark:hover:bg-[#271C17] text-[#6B544B] dark:text-[#D1C0B4]'
+                        ? 'bg-[#FFF8EB] dark:bg-[#2B1D18] border-[#7A241C] text-[#30231E] dark:text-[#FFF8EB]'
+                        : 'bg-[#FFFFFF] dark:bg-[#1E1410] border-[#E8DAC8] dark:border-[#42322B] text-[#6B544B] dark:text-[#D1C0B4] hover:border-[#D99A35]/50'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-[#1C120E]">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-[#241713]">
                         <CulinaryArtwork
                           type={restaurant.artworkType || 'default'}
                           className="w-full h-full object-cover"
+                          dishName={restaurant.name}
                         />
                       </div>
-
                       <div className="min-w-0">
-                        <div className="font-serif font-bold text-sm text-[#30231E] dark:text-[#FFF8EB] truncate">
+                        <h4 className="font-serif font-bold text-xs truncate text-[#30231E] dark:text-[#FFF8EB]">
                           {restaurant.name}
-                        </div>
-                        <div className="text-[11px] text-[#8C766B] truncate">
-                          {restaurant.locality}
-                        </div>
+                        </h4>
+                        <p className="text-[10px] text-[#8C766B] truncate">
+                          {restaurant.locality} · {restaurant.speciality}
+                        </p>
                       </div>
                     </div>
 
@@ -340,10 +273,10 @@ export const CreateRoomView: React.FC<CreateRoomViewProps> = ({
               <Users className="w-5 h-5 text-[#D99A35]" />
               <span>
                 {isSubmitting
-                  ? 'Generating Secure Room...'
+                  ? 'Publishing Community Poll...'
                   : shortlistedIds.length < 2
                   ? 'Select at least 2 candidates'
-                  : `Launch Voting Room with ${shortlistedIds.length} Contenders`}
+                  : `Launch Voting Poll with ${shortlistedIds.length} Contenders`}
               </span>
             </button>
           </div>

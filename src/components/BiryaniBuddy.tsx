@@ -37,14 +37,26 @@ interface BiryaniBuddyProps {
   shortlistedIds: string[];
   onToggleShortlist: (id: string) => void;
   onErrorPrompt: (error: HyderabadError) => void;
+  isOpenControlled?: boolean;
+  onOpenControlledChange?: (open: boolean) => void;
 }
 
 export const BiryaniBuddy: React.FC<BiryaniBuddyProps> = ({
   shortlistedIds,
   onToggleShortlist,
-  onErrorPrompt
+  onErrorPrompt,
+  isOpenControlled,
+  onOpenControlledChange
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = isOpenControlled !== undefined ? isOpenControlled : internalIsOpen;
+  const setIsOpen = (open: boolean) => {
+    setInternalIsOpen(open);
+    if (onOpenControlledChange) {
+      onOpenControlledChange(open);
+    }
+  };
+
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userCoords, setUserCoords] = useState<Coordinates | null>(null);

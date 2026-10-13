@@ -54,8 +54,8 @@ service cloud.firestore {
 
     // Room collection
     match /rooms/{roomId} {
-      // Room read is allowed by room ID lookup for participants
-      allow get: if isSignedIn() && isValidId(roomId);
+      // Room read is allowed by room ID lookup so any visitor can view voting sessions without a login wall
+      allow get: if isValidId(roomId);
       allow list: if false; // Room enumeration scraping disabled
 
       // Room creation
@@ -86,9 +86,9 @@ service cloud.firestore {
 
       // Votes subcollection
       match /votes/{userId} {
-        // Participants can read individual votes and list room votes for real-time aggregate totals
-        allow get: if isSignedIn() && isValidId(roomId) && isValidId(userId);
-        allow list: if isSignedIn() && isValidId(roomId);
+        // Anyone can read individual votes and list room votes for real-time aggregate totals without forced login
+        allow get: if isValidId(roomId) && isValidId(userId);
+        allow list: if isValidId(roomId);
 
         // Cast vote
         allow create: if isSignedIn()

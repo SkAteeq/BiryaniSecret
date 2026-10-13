@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Flame, Compass, Users, LogIn, Edit2, Check, UserCheck, Sun, Moon } from 'lucide-react';
+import { Flame, Compass, Users, LogIn, Edit2, Check, UserCheck, Sun, Moon, LogOut } from 'lucide-react';
 import { AppView, UserProfile } from '../types';
-import { signInWithGoogle, setStoredGuestName } from '../firebase/authService';
+import { setStoredGuestName, signOutUser } from '../firebase/authService';
 
 interface NavbarProps {
   currentView: AppView;
   onNavigate: (view: AppView) => void;
   user: UserProfile | null;
   onUserUpdated: (name: string) => void;
-  onOpenJoinModal: () => void;
+  onOpenAuthModal: () => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
 }
@@ -18,13 +18,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   user,
   onUserUpdated,
-  onOpenJoinModal,
+  onOpenAuthModal,
   isDarkMode,
   onToggleTheme
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(user?.displayName || '');
-  const [authLoading, setAuthLoading] = useState(false);
 
   const handleSaveName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,21 +34,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setAuthLoading(true);
+  const handleSignOut = async () => {
     try {
-      await signInWithGoogle();
+      await signOutUser();
     } catch (err) {
-      console.error('Google sign in error:', err);
-    } finally {
-      setAuthLoading(false);
+      console.error('Sign out error:', err);
     }
   };
 
   return (
     <header className="sticky top-0 z-40 bg-[#30231E] text-[#FFF8EB] border-b border-[#D99A35]/30 shadow-lg">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Zone 1: Brand Wordmark (Single text element) */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+        {/* Brand Wordmark */}
         <button
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2.5 text-left focus:outline-none group whitespace-nowrap shrink-0"
@@ -64,8 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </button>
 
-        {/* Zone 2: Clean 3-zone Nav Links */}
-        <nav className="flex items-center gap-2 sm:gap-4 text-xs font-semibold">
+        {/* Clean Nav Links (No Join Code / Invitation Links) */}
+        <nav className="flex items-center gap-1.5 sm:gap-3 text-xs font-semibold">
           <button
             onClick={() => onNavigate('discover')}
             className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
@@ -79,26 +75,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <button
-            onClick={() => onNavigate('create-room')}
+            onClick={() => onNavigate('room')}
             className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-              currentView === 'create-room'
+              currentView === 'room'
                 ? 'bg-[#7A241C] text-[#FFF8EB] shadow-sm font-bold'
                 : 'text-[#FFF8EB]/80 hover:text-[#FFF8EB] hover:bg-[#3E2D27]'
             }`}
           >
             <Users className="w-3.5 h-3.5 text-[#D99A35]" />
-            <span>Start Vote</span>
-          </button>
-
-          <button
-            onClick={onOpenJoinModal}
-            className="px-3 py-1.5 rounded-lg border border-[#D99A35]/50 text-[#D99A35] hover:bg-[#D99A35]/15 transition-colors whitespace-nowrap shrink-0"
-          >
-            Join Code
+            <span>Live Vote</span>
           </button>
         </nav>
 
-        {/* Zone 3: Actions (Theme Toggle & User Profile) */}
+        {/* Actions: Theme Toggle & User Auth Status */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Light / Dark Mode Toggle */}
           <button
@@ -110,8 +99,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isDarkMode ? <Sun className="w-4 h-4 text-[#D99A35]" /> : <Moon className="w-4 h-4 text-[#D99A35]" />}
           </button>
 
-          {/* User Nickname editor */}
-          {isEditingName ? (
+          {/* User Auth Section */}
+          {!user ? (
+            /* Visitor Mode: Optional Sign In button */
+            <button
+              onClick={onOpenAuthModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7A241C] hover:bg-[#912D24] text-[#FFF8EB] text-xs font-bold transition-all shadow-sm active:scale-95"
+              title="Sign in with Google or Guest"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#D99A35]" />
+              <span className="hidden sm:inline">Sign In</span>
+            </button>
+          ) : isEditingName ? (
+            /* Editing Guest Nickname */
             <form onSubmit={handleSaveName} className="flex items-center gap-1">
               <input
                 type="text"
@@ -130,30 +130,58 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </form>
           ) : (
-            <div className="flex items-center gap-1">
-              <button
+            /* Signed In User (Google or Guest) */
+            <div className="flex items-center gap-1.5">
+              <div
                 onClick={() => {
-                  setEditedName(user?.displayName || '');
-                  setIsEditingName(true);
+                  if (user.isAnonymous) {
+                    setEditedName(user.displayName);
+                    setIsEditingName(true);
+                  }
                 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#241713] hover:bg-[#3E2D27] text-[#FFF8EB] text-xs transition-colors border border-[#D99A35]/30 max-w-[120px] sm:max-w-none truncate"
-                title="Tap to change display name"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#241713] text-[#FFF8EB] text-xs border border-[#D99A35]/30 max-w-[130px] sm:max-w-none truncate ${
+                  user.isAnonymous ? 'cursor-pointer hover:bg-[#3E2D27]' : ''
+                }`}
+                title={user.isAnonymous ? 'Guest session (tap to rename)' : `Signed in as ${user.displayName}`}
               >
-                <UserCheck className="w-3.5 h-3.5 text-[#D99A35] shrink-0" />
-                <span className="truncate font-medium">{user?.displayName || 'Guest'}</span>
-                <Edit2 className="w-2.5 h-2.5 text-[#D99A35]/70 shrink-0 ml-0.5" />
-              </button>
+                {/* Google Profile Photo or Guest Icon */}
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName}
+                    className="w-5 h-5 rounded-full object-cover shrink-0 border border-[#D99A35]"
+                  />
+                ) : (
+                  <UserCheck className="w-3.5 h-3.5 text-[#D99A35] shrink-0" />
+                )}
 
-              {user?.isAnonymous && (
+                <span className="truncate font-medium">{user.displayName}</span>
+
+                {user.isAnonymous && (
+                  <Edit2 className="w-2.5 h-2.5 text-[#D99A35]/70 shrink-0 ml-0.5" />
+                )}
+              </div>
+
+              {/* Upgrade Guest to Google if anonymous */}
+              {user.isAnonymous && (
                 <button
-                  onClick={handleGoogleSignIn}
-                  disabled={authLoading}
+                  onClick={onOpenAuthModal}
                   className="p-1.5 rounded-lg hover:bg-[#3E2D27] text-[#D99A35] transition-colors"
-                  title="Sign in with Google"
+                  title="Connect Google Account"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                 </button>
               )}
+
+              {/* Sign Out Button */}
+              <button
+                onClick={handleSignOut}
+                className="p-1.5 rounded-lg hover:bg-[#3E2D27] text-[#FFF8EB]/70 hover:text-[#FFF8EB] transition-colors"
+                title="Sign Out"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
